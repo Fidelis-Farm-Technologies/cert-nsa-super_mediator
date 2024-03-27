@@ -1,0 +1,968 @@
+#! /bin/sh
+
+##  Copyright 2021-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+
+##  ------------------------------------------------------------------------
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  Super Mediator 2.0.0
+##
+##  Copyright 2023 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+##  Contract No.: FA8702-15-D-0002
+##  Contractor Name: Carnegie Mellon University
+##  Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+##
+##  The Government's rights to use, modify, reproduce, release, perform,
+##  display, or disclose this software are restricted by paragraph (b)(2) of
+##  the Rights in Noncommercial Computer Software and Noncommercial Computer
+##  Software Documentation clause contained in the above identified
+##  contract. No restrictions apply after the expiration date shown
+##  above. Any reproduction of the software or portions thereof marked with
+##  this legend must also reproduce the markings.
+##
+##  This Software includes and/or makes use of Third-Party Software each
+##  subject to its own license.
+##
+##  DM23-2321
+##  @DISTRIBUTION_STATEMENT_END@
+##  ------------------------------------------------------------------------
+
+#  Run as part of "make check".
+#
+#  This file tests configuration files using the --test-config switch.
+#  All configurations are expected to FAIL.
+#
+
+# name of this file
+test_script="`basename $0 .test`"
+
+# source the setup file
+if [ -f "tests/setup.sh" ] ; then
+    setup="tests/setup.sh"
+else
+    setup="${srcdir}/tests/setup.sh"
+fi
+. ${setup}
+
+# ensure basic things work
+check_sm_version
+check_make_temp
+check_make_tempdir
+
+
+testnum=0
+
+# For help in tracking errors
+set -x
+
+# Create a temporary directory
+tdir=`make_tempdir ${test_script}`
+
+
+# Number of tests
+echo 1..53
+
+
+# Missing collector
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Missing exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR ROTATING_FILES
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX DIRECTORY_POLL
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Missing value for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  "silkAppLabel" == 53
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Missing value for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  "silkAppLabel" == 53
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid values for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid values for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PORT 34567
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid values for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  HOSTNAME localhost
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid values for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX TCP
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid values for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX TCP
+  PATH "/dev/null"
+  GZIP_FILES
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid options for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR TCP
+  POLL 10
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invalid options for transport
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  POLL 10
+  PATH "${tdir}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Missing move/delete statement in polling collector
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "${tdir}"
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Missing rotate_interval statement in rotating exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "${tdir}"
+  DELETE
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_DEDUP_ONLY
+  DNS_RR
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_DEDUP
+  DNS_RR_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_RR
+  SSL_DEDUP_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_RR_ONLY
+  SSL_DEDUP
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DEDUP_ONLY
+  SSL_DEDUP
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_RR
+  DEDUP_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_RR
+  FLOW_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  FLOW_ONLY
+  SSL_DEDUP
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DEDUP_ONLY
+  FLOW_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  FLOW_ONLY
+  DNS_DEDUP
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  FLOW_ONLY
+  DNS_RR FULL
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  FLOW_ONLY
+EXPORTER END
+SSL_CONFIG "exporter"
+  SSL_DEDUP
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Conflicting record types in exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  FLOW_ONLY
+  DPI_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# DNS_RR is for IPFIX only
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  DNS_RR
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Statement requires text exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  PRINT_HEADER
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Statement requires text exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  ESCAPE_CHARS
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Statement requires text exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DELIMITER ","
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Statement requires text exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DPI_DELIMITER " "
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Bad delimiter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  DELIMITER "string too long"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# DEDUP_PER_FLOW only for TEXT exporters
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  DEDUP_PER_FLOW
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# MULTI_FILES only for TEXT exporters
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  MULTI_FILES
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# MULTI_FILES require PATH to be a directory
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  MULTI_FILES
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# MULTI_FILES exporter must have DPI_ONLY
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "${tdir}"
+  MULTI_FILES
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# MULTI_FILES may only exist on one exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "${tdir}"
+  DPI_ONLY
+  MULTI_FILES
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "another-exporter"
+  PATH "${tdir}"
+  DPI_ONLY
+  MULTI_FILES
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Unknown exporter name
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "bad-name"
+  FLUSH_TIME 3600
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Unknown exporter name
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+DEDUP_CONFIG "bad-name"
+  MERGE_TRUNCATED
+DEDUP_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Unknown exporter name
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+DNS_DEDUP "bad-name"
+  FLUSH_TIME 3600
+DNS_DEDUP END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Unknown map
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+VLAN_MAP "Vlad's map"
+  "all"   OTHER
+VLAN_MAP END
+DEDUP_CONFIG "exporter"
+  PREFIX "vlan" SIP MAP("Vlads map") [224]
+DEDUP_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# DNS_RESPONSE_ONLY requires DNS_RR
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  DNS_RESPONSE_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# DNS_RESPONSE_ONLY requires DNS_RR
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+  DNS_DEDUP_ONLY
+  DNS_RESPONSE_ONLY
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# SSL_CONFIG ISSUER invalid for IPFIX exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  ISSUER [ 14 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# SSL_CONFIG SUBJECT invalid for IPFIX exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  SUBJECT [ 14 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# SSL_CONFIG OTHER invalid for IPFIX exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  OTHER [ 14 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# SSL_CONFIG EXTENSIONS invalid for IPFIX exporter
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  EXTENSIONS [ 14 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Exceed upper bound of SSL_CONFIG ISSUER
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  ISSUER [ 268 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Exceed upper bound of SSL_CONFIG SUBJECT
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  SUBJECT [ 268 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Exceed upper bound of SSL_CONFIG OTHER
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  OTHER [ 303 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Exceed upper bound of SSL_CONFIG EXTENSIONS
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "exporter"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "exporter"
+  EXTENSIONS [ 40 ]
+SSL_CONFIG END
+EOF
+run_sm_xfail ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+#  Remove temporary directory if it is empty
+test -d "${tdir}" && rmdir "${tdir}" 2>/dev/null
+
+#  Exit with success
+exit 0

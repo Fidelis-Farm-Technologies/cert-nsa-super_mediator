@@ -1,0 +1,268 @@
+#!/bin/sh
+
+##  Copyright 2012-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+#
+# super_mediator daemon start/control script
+#
+# chkconfig: - 18 96
+# description:  Control super_mediator as a live capture daemon
+
+##  ------------------------------------------------------------------------
+##  Authors: Emily Sarneso, Dwight Beaver
+##  ------------------------------------------------------------------------
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  Super Mediator 2.0.0
+##
+##  Copyright 2023 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+##  Contract No.: FA8702-15-D-0002
+##  Contractor Name: Carnegie Mellon University
+##  Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+##
+##  The Government's rights to use, modify, reproduce, release, perform,
+##  display, or disclose this software are restricted by paragraph (b)(2) of
+##  the Rights in Noncommercial Computer Software and Noncommercial Computer
+##  Software Documentation clause contained in the above identified
+##  contract. No restrictions apply after the expiration date shown
+##  above. Any reproduction of the software or portions thereof marked with
+##  this legend must also reproduce the markings.
+##
+##  This Software includes and/or makes use of Third-Party Software each
+##  subject to its own license.
+##
+##  DM23-2321
+##  @DISTRIBUTION_STATEMENT_END@
+##  ------------------------------------------------------------------------
+
+RETVAL=0
+
+MYNAME="super_mediator"
+
+# autoconf stuff
+prefix=@prefix@
+
+# super_mediator.conf must be located in the SCRIPT_CONFIG_LOCATION directory to work.
+# Edit this line or set the SCRIPT_CONFIG_LOCATION environment variable if
+# super_mediator.conf is not located in the default location.
+if [ "x$SCRIPT_CONFIG_LOCATION" = "x" ] ; then
+    SCRIPT_CONFIG_LOCATION=@sysconfdir@
+fi
+
+if [ "x$SM_STATEDIR" = "x" ] ; then
+    SM_STATEDIR=@localstatedir@
+fi
+
+lockfile=/var/lock/subsys/super_mediator
+
+# Determine whether our name has an addendum
+BASENAME='s:\(.*/\)*\([^/]*\)$:\2:'
+SEDEXT1='s/\(.*\)\.init\.d$/\1/'
+SEDEXT2='s/\(.*\)\.sh$/\1/'
+SCRIPTNAME=`echo $0 | sed ${BASENAME} | sed ${SEDEXT1} | sed ${SEDEXT2}`
+PRETEST="\\(${MYNAME}\\)\\(-.*\\)*\$"
+SUFTEST="${MYNAME}\\(-.*\\)\$"
+PREFIX=`expr "x${SCRIPTNAME}" : "x${PRETEST}"`
+SUFFIX=`expr "x${SCRIPTNAME}" : "x${SUFTEST}"`
+
+if [ "x$PREFIX" != "x$MYNAME" ] ; then
+    SUFFIX=
+fi
+
+SCRIPT_CONFIG=${SCRIPT_CONFIG_LOCATION}/${MYNAME}${SUFFIX}.conf
+
+#Check if PIDFILE is defined in the super_mediator.conf
+PIDFILE=$(grep "^PIDFILE" ${SCRIPT_CONFIG} | cut -d " " -f 2- - | sed 's/\"//g')
+
+
+#If PIDFILE is not defined in configuration use default
+if [ "x$PIDFILE" = "x" ]; then
+    if [ -d ${SM_STATEDIR}/run/ ] ; then
+	PIDFILE=${SM_STATEDIR}/run/${MYNAME}.pid
+    elif [ -d /var/run ] ; then
+	PIDFILE=/var/run/${MYNAME}.pid
+    else
+	echo "Error. No directory for PID file"
+	echo "Tried ${SM_STATEDIR}/run and /var/run."
+	echo "Exiting."
+	exit 1
+    fi
+fi
+
+
+
+check_executable()
+{
+    if [ ! -x $1 ] ; then
+        echo "$0: $1 is not executable or not found."
+        exit 1
+    fi
+}
+
+SMBIN=${prefix}/bin/super_mediator
+
+check_executable ${SMBIN}
+
+# verify we have a good configuration
+
+check_varempty()
+{
+    if [ "x$2" = "x" ] ; then
+        echo "$0: the $1 parameter in ${SCRIPT_CONFIG} is not set."
+        exit 1
+    fi
+}
+
+# build the argument lists
+
+SMARGS=""
+
+SMARGS="$SMARGS -c ${SCRIPT_CONFIG} --pidfile ${PIDFILE} -d"
+
+checkpid() {
+    kill -0 $1 >/dev/null 2>&1 && return 0
+    return 1
+}
+
+getPid() {
+    if [ -f $PIDFILE ] ; then
+        RETVAL=2
+        read pid < ${PIDFILE}
+        if [ "x$pid" != "x" ] ; then
+            RETVAL=3
+            # Found a pid
+            if checkpid $pid ; then
+                echo $pid
+                RETVAL=0
+            fi
+        fi
+    fi
+    echo ""
+    return $RETVAL
+}
+
+start() {
+    /bin/echo -n "Starting ${MYNAME}:	"
+    PID=`getPid`
+    if [ "x${PID}" != "x" ]; then
+        echo ""
+        echo "${MYNAME} is already running.  PID: ${PID}"
+        return 1
+    fi
+    $SMBIN $SMARGS
+    RETVAL=$?
+	
+    if [ "$RETVAL" -ne "0" ] ; then
+        echo "[Failed]"
+    else
+         sleep 1
+         PID=`getPid`
+         if [ "x$PID" = "x" ] ; then
+	     echo "[Failed]"
+	     RETVAL=1
+         else
+	     touch $lockfile
+	     echo '[OK]'
+         fi
+    fi
+
+    return $RETVAL
+}
+
+stop() {
+    PID=`getPid`
+    if [ "x${PID}" = "x" ] ; then
+        echo "${MYNAME} not running"
+        return 1
+    fi
+    /bin/echo -n "Stopping ${MYNAME}:	"
+    /bin/kill -s INT $PID
+    sleep 1
+    (checkpid $PID)
+    RETVAL=$?
+    [ "$RETVAL" -eq "1" ] && echo '[OK]' || echo '[Failed]'
+    rm -f $lockfile
+    return $RETVAL
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
+
+status() {
+    if [ $# -gt 0 ] ; then
+        doEcho=0
+    else
+        doEcho=1
+    fi
+
+    # first check if the process is running
+    PID=`getPid`
+    RETVAL=$?
+
+    if [ $doEcho -eq 1 ] ; then
+        case "$RETVAL" in
+          0)
+            echo "${MYNAME} is running with pid $PID"
+            ;;
+          1)
+            echo "${MYNAME} is stopped"
+            ;;
+          *)
+            echo "${MYNAME} is dead but ${YAF_PIDFILE} exists"
+            ;;
+        esac
+    fi
+    return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+    start)
+	start
+	RETVAL=$?
+	;;
+    stop)
+	stop
+	RETVAL=$?
+	;;
+    reload)
+	reload
+	RETVAL=$?
+	;;
+    restart)
+	restart
+	RETVAL=$?
+	;;
+    status)
+    status
+	RETVAL=$?
+    ;;
+    *)
+	echo $"Usage: $0 {start|stop|restart|status}"
+	RETVAL=1
+	;;
+esac
+exit $RETVAL

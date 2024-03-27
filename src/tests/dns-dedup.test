@@ -1,0 +1,378 @@
+#! /bin/sh
+
+##  Copyright 2021-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+
+##  ------------------------------------------------------------------------
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  Super Mediator 2.0.0
+##
+##  Copyright 2023 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+##  Contract No.: FA8702-15-D-0002
+##  Contractor Name: Carnegie Mellon University
+##  Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+##
+##  The Government's rights to use, modify, reproduce, release, perform,
+##  display, or disclose this software are restricted by paragraph (b)(2) of
+##  the Rights in Noncommercial Computer Software and Noncommercial Computer
+##  Software Documentation clause contained in the above identified
+##  contract. No restrictions apply after the expiration date shown
+##  above. Any reproduction of the software or portions thereof marked with
+##  this legend must also reproduce the markings.
+##
+##  This Software includes and/or makes use of Third-Party Software each
+##  subject to its own license.
+##
+##  DM23-2321
+##  @DISTRIBUTION_STATEMENT_END@
+##  ------------------------------------------------------------------------
+
+#  Run as part of "make check".
+#
+#  This file tests generation of DNS_DEDUP records.
+#
+
+# name of this file
+test_script="`basename $0 .test`"
+
+# source the setup file
+if [ -f "tests/setup.sh" ] ; then
+    setup="tests/setup.sh"
+else
+    setup="${srcdir}/tests/setup.sh"
+fi
+. ${setup}
+
+# ensure basic things work
+check_sm_version
+check_make_temp
+check_make_tempdir
+
+
+# data file
+datafile="FCCX-reduced.ipfix"
+for dir in "" "${srcdir}/" "../" "${srcdir}/../" ; do
+    p="${dir}${datafile}"
+    if [ -f "${p}" ] ; then
+        datafile="${p}"
+        break
+    fi
+done
+check_files_exist "${datafile}"
+
+
+testnum=0
+
+
+
+#   Expected output from all three files is the following:
+#
+#   >>> dns_dedup-no_flow-no_stats.ipfix <<<
+#     Template ID |  Records  | Template Name
+#   53254 (0xd006)|        428|
+#   53255 (0xd007)|         44|
+#   56788 (0xddd4)|        803| sm_dns_dedup_orec
+#   56798 (0xddde)|        931| sm_dns_dedup_arec
+#
+#   >>> dns_dedup_only-last_seen-add_exporter_name.ipfix <<<
+#     Template ID |  Records  | Template Name
+#   53254 (0xd006)|        428|
+#   53255 (0xd007)|         44|
+#   56789 (0xddd5)|        803| sm_dns_dedup_orec_last_seen
+#   56799 (0xdddf)|        931| sm_dns_dedup_arec_last_seen
+#
+#   >>> dns_dedup_only-last_seen.ipfix <<<
+#     Template ID |  Records  | Template Name
+#   53254 (0xd006)|        428|
+#   53255 (0xd007)|         44|
+#   56785 (0xddd1)|        803| sm_dns_dedup_orec_last_seen
+#   56795 (0xdddb)|        931| sm_dns_dedup_arec_last_seen
+#
+#   >>> dns_dedup_only.ipfix <<<
+#     Template ID |  Records  | Template Name
+#   53254 (0xd006)|        428|
+#   53255 (0xd007)|         44|
+#   56788 (0xddd4)|        803| sm_dns_dedup_orec
+#   56798 (0xddde)|        931| sm_dns_dedup_arec
+#
+#
+#   Need to finish the testing to find ipfixDump, handle output from
+#   both v2 and v3 of ipfixDump, not rely on pcregrep
+#
+
+
+
+
+
+# For help in tracking errors
+set -x
+
+# Create a temporary directory
+tdir=`make_tempdir ${test_script}`
+tempdir="${tdir}"
+
+
+# Number of tests
+echo 1..9
+
+
+file=dns_dedup_only-last_seen-add_exporter_name.ipfix
+tfile="${tdir}/${file}"
+testnum=`expr 1 + ${testnum}`
+config=`make_temp "${file}-${testnum}"`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "${datafile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file}"
+  PATH "${tfile}"
+  DNS_DEDUP_ONLY
+EXPORTER END
+DNS_DEDUP "${file}"
+  LAST_SEEN
+  ADD_EXPORTER_NAME
+  FLUSH_TIMEOUT   65535
+  MAX_HIT_COUNT   65535
+DNS_DEDUP END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+
+
+# process that file with super_mediator
+if [ $? -ne 0 ] ; then
+
+testnum=`expr 1 + ${testnum}`
+echo "ok $testnum # SKIP Fix failure of previous test"
+
+else
+
+file2=`basename ${file} .ipfix`-sm2
+tfile2="${tdir}/${file2}"
+testnum=`expr 1 + ${testnum}`
+config2=`make_temp "${file2}-${testnum}"`
+cat <<EOF >>${config2}
+COLLECTOR SINGLE_FILE "${file}"
+  PATH "${tfile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file2}.ipfix"
+  PATH "${tfile2}.ipfix"
+EXPORTER END
+EXPORTER JSON SINGLE_FILE "${file2}.json"
+  PATH "${tfile2}.json"
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "${file2}.txt"
+  PATH "${tfile2}.txt"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config2}"
+remove_if_success "${config}" "${config2}"
+
+fi
+
+
+file=dns_dedup_only-last_seen.ipfix
+tfile="${tdir}/${file}"
+testnum=`expr 1 + ${testnum}`
+config=`make_temp "${file}-${testnum}"`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "${datafile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file}"
+  PATH "${tfile}"
+  DNS_DEDUP_ONLY
+EXPORTER END
+DNS_DEDUP "${file}"
+  LAST_SEEN
+  FLUSH_TIMEOUT   65535
+  MAX_HIT_COUNT   65535
+DNS_DEDUP END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+
+
+# process that file with super_mediator
+if [ $? -ne 0 ] ; then
+
+testnum=`expr 1 + ${testnum}`
+echo "ok $testnum # SKIP Fix failure of previous test"
+
+else
+
+file2=`basename ${file} .ipfix`-sm2
+tfile2="${tdir}/${file2}"
+testnum=`expr 1 + ${testnum}`
+config2=`make_temp "${file2}-${testnum}"`
+cat <<EOF >>${config2}
+COLLECTOR SINGLE_FILE "${file}"
+  PATH "${tfile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file2}.ipfix"
+  PATH "${tfile2}.ipfix"
+EXPORTER END
+EXPORTER JSON SINGLE_FILE "${file2}.json"
+  PATH "${tfile2}.json"
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "${file2}.txt"
+  PATH "${tfile2}.txt"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config2}"
+remove_if_success "${config}" "${config2}"
+
+fi
+
+
+file=dns_dedup_only.ipfix
+tfile="${tdir}/${file}"
+testnum=`expr 1 + ${testnum}`
+config=`make_temp "${file}-${testnum}"`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "${datafile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file}"
+  PATH "${tfile}"
+  DNS_DEDUP_ONLY
+EXPORTER END
+DNS_DEDUP "${file}"
+  ADD_EXPORTER_NAME
+  FLUSH_TIMEOUT   65535
+  MAX_HIT_COUNT   65535
+DNS_DEDUP END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+
+
+# process that file with super_mediator
+if [ $? -ne 0 ] ; then
+
+testnum=`expr 1 + ${testnum}`
+echo "ok $testnum # SKIP Fix failure of previous test"
+
+else
+
+file2=`basename ${file} .ipfix`-sm2
+tfile2="${tdir}/${file2}"
+testnum=`expr 1 + ${testnum}`
+config2=`make_temp "${file2}-${testnum}"`
+cat <<EOF >>${config2}
+COLLECTOR SINGLE_FILE "${file}"
+  PATH "${tfile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file2}.ipfix"
+  PATH "${tfile2}.ipfix"
+EXPORTER END
+EXPORTER JSON SINGLE_FILE "${file2}.json"
+  PATH "${tfile2}.json"
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "${file2}.txt"
+  PATH "${tfile2}.txt"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config2}"
+remove_if_success "${config}" "${config2}"
+
+fi
+
+
+file=dns_dedup-no_flow-no_stats.ipfix
+tfile="${tdir}/${file}"
+testnum=`expr 1 + ${testnum}`
+config=`make_temp "${file}-${testnum}"`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "${datafile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file}"
+  PATH "${tfile}"
+  DNS_DEDUP
+  NO_FLOW
+  NO_STATS
+EXPORTER END
+DNS_DEDUP "${file}"
+  ADD_EXPORTER_NAME
+  FLUSH_TIMEOUT   65535
+  MAX_HIT_COUNT   65535
+DNS_DEDUP END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+
+
+# process that file with super_mediator
+if [ $? -ne 0 ] ; then
+
+testnum=`expr 1 + ${testnum}`
+echo "ok $testnum # SKIP Fix failure of previous test"
+
+else
+
+file2=`basename ${file} .ipfix`-sm2
+tfile2="${tdir}/${file2}"
+testnum=`expr 1 + ${testnum}`
+config2=`make_temp "${file2}-${testnum}"`
+cat <<EOF >>${config2}
+COLLECTOR SINGLE_FILE "${file}"
+  PATH "${tfile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "${file2}.ipfix"
+  PATH "${tfile2}.ipfix"
+EXPORTER END
+EXPORTER JSON SINGLE_FILE "${file2}.json"
+  PATH "${tfile2}.json"
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "${file2}.txt"
+  PATH "${tfile2}.txt"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config2}"
+remove_if_success "${config}" "${config2}"
+
+fi
+
+
+file=dns_dedup_only.json
+tfile="${tdir}/${file}"
+testnum=`expr 1 + ${testnum}`
+config=`make_temp "${file}-${testnum}"`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "${datafile}"
+COLLECTOR END
+EXPORTER JSON SINGLE_FILE "${file}"
+  PATH "${tfile}"
+  DNS_DEDUP_ONLY
+EXPORTER END
+DNS_DEDUP "${file}"
+  ADD_EXPORTER_NAME
+  FLUSH_TIMEOUT   65535
+  MAX_HIT_COUNT   65535
+DNS_DEDUP END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+#  Remove temporary directory if it is empty
+test -d "${tdir}" && rmdir "${tdir}" 2>/dev/null
+
+#  Exit with success
+exit 0

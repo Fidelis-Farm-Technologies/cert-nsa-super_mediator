@@ -1,0 +1,872 @@
+#! /bin/sh
+
+##  Copyright 2021-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+
+##  ------------------------------------------------------------------------
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  Super Mediator 2.0.0
+##
+##  Copyright 2023 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+##  Contract No.: FA8702-15-D-0002
+##  Contractor Name: Carnegie Mellon University
+##  Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+##
+##  The Government's rights to use, modify, reproduce, release, perform,
+##  display, or disclose this software are restricted by paragraph (b)(2) of
+##  the Rights in Noncommercial Computer Software and Noncommercial Computer
+##  Software Documentation clause contained in the above identified
+##  contract. No restrictions apply after the expiration date shown
+##  above. Any reproduction of the software or portions thereof marked with
+##  this legend must also reproduce the markings.
+##
+##  This Software includes and/or makes use of Third-Party Software each
+##  subject to its own license.
+##
+##  DM23-2321
+##  @DISTRIBUTION_STATEMENT_END@
+##  ------------------------------------------------------------------------
+
+#  Run as part of "make check".
+#
+#  This file tests configuration files using either the --test-config
+#  switch or /dev/null as the input and output.  All commands in this
+#  file are expected to SUCCEED.
+#
+
+# name of this file
+test_script="`basename $0 .test`"
+
+# source the setup file
+if [ -f "tests/setup.sh" ] ; then
+    setup="tests/setup.sh"
+else
+    setup="${srcdir}/tests/setup.sh"
+fi
+. ${setup}
+
+# ensure basic things work
+check_sm_version
+check_make_temp
+check_make_tempdir
+
+testnum=0
+
+# For help in tracking errors
+set -x
+
+# Create a temporary directory
+tdir=`make_tempdir ${test_script}`
+
+
+# Number of tests
+echo 1..37
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "text"
+  PATH "/dev/null"
+EXPORTER END
+EXPORTER JSON SINGLE_FILE "json"
+  PATH "/dev/null"
+EXPORTER END
+LOG_LEVEL MESSAGE
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "one"
+  PATH "/dev/null"
+COLLECTOR END
+COLLECTOR SINGLE_FILE "two"
+  PATH "/dev/null"
+COLLECTOR END
+COLLECTOR SINGLE_FILE "three"
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+LOG_LEVEL MESSAGE
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  FIELDS ["sourceIPv4Address", "sourceTransportPort", "destinationIPv4Address", "destinationTransportPort", "protocolIdentifier" ]
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  PRINT_HEADER
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER JSON SINGLE_FILE
+  PATH "/dev/null"
+  FIELDS ["sourceIPv4Address", "sourceTransportPort", "destinationIPv4Address", "destinationTransportPort", "protocolIdentifier" ]
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+  DISABLE METADATA_EXPORT
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "${tdir}"
+  POLL 900
+  DELETE
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "${tdir}"
+  MOVE "${tdir}"
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR DIRECTORY_POLL
+  PATH "${tdir}"
+  DECOMPRESS_DIRECTORY "${tdir}"
+  DELETE
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename_template"
+  ROTATE_INTERVAL 10
+  LOCK
+  REMOVE_EMPTY_FILES
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT ROTATING_FILES
+  PATH "${tdir}/filename_template"
+  ROTATE_INTERVAL 10
+  TIMESTAMP_FILES
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  GZIP_FILES
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  MOVE "${tdir}"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+# Invariant support currently disabled
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT ROTATING_FILES
+  PATH "${tdir}/filename_template"
+  ROTATE_INTERVAL 10
+  INVARIANT
+EXPORTER END
+EOF
+run_sm_todo ${testnum} "Invariant support disabled" --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT ROTATING_FILES
+  PATH "${tdir}/filename_template"
+  ROTATE_INTERVAL 10
+  MAX_SECONDS 30
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT ROTATING_FILES
+  PATH "${tdir}/filename_template"
+  ROTATE_INTERVAL 10
+  MAX_BYTES 10000
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR TCP
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR UDP
+COLLECTOR END
+EXPORTER IPFIX ROTATING_FILES
+  PATH "${tdir}/filename-template"
+  ROTATE_INTERVAL 900
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR TCP
+  PORT 18888
+COLLECTOR END
+EXPORTER IPFIX TCP
+  PORT 18889
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR TCP
+  PORT 18888
+  HOSTNAME localhost
+COLLECTOR END
+EXPORTER IPFIX TCP
+  PORT 18889
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX TCP
+  PORT 18889
+  HOSTNAME "localhost"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR TCP
+  IP_ADDRESS 203.0.113.201
+COLLECTOR END
+EXPORTER IPFIX UDP
+  PORT 18890
+  IP_ADDRESS "127.0.0.1"
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX UDP
+  PORT 18890
+  UDP_TEMPLATE_TIMEOUT 600
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+PRESERVE_OBDOMAIN
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+  AND_FILTER
+  "silkAppLabel" == 0x50
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DISABLE METADATA_EXPORT
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  FIELDS ["sourceIPv4Address", "sourceTransportPort", "destinationIPv4Address", "destinationTransportPort", "protocolIdentifier" ]
+  DPI_FIELD_LIST [ 111, 112 ]
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  FIELDS ["sourceIPv4Address", "sourceTransportPort", "destinationIPv4Address", "destinationTransportPort", "protocolIdentifier", "DPI" ]
+  DPI_ONLY
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+STATS_TIMEOUT 65500
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+  "silkAppLabel" != 0
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "no_flow_stats"
+  PATH "/dev/null"
+  NO_FLOW_STATS
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "no_index+escape_chars"
+  PATH "/dev/null"
+  NO_INDEX
+  ESCAPE_CHARS
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "flow_only"
+  PATH "/dev/null"
+  FLOW_ONLY
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "delimiter+ssl_config"
+  PATH "/dev/null"
+  DELIMITER ","
+  DPI_DELIMITER ";"
+EXPORTER END
+SSL_CONFIG "delimiter+ssl_config"
+  ISSUER [ * ]
+  SUBJECT [ * ]
+  OTHER [ * ]
+  EXTENSIONS [ * ]
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config2"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "ssl_config2"
+  ADD_EXPORTER_NAME
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config3"
+  PATH "/dev/null"
+  SSL_DEDUP_ONLY
+EXPORTER END
+SSL_CONFIG "ssl_config3"
+  MAX_HIT_COUNT  1000
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config4"
+  PATH "/dev/null"
+  SSL_DEDUP
+EXPORTER END
+SSL_CONFIG "ssl_config4"
+  FLUSH_TIME     1000
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config5"
+  PATH "/dev/null"
+  SSL_DEDUP
+EXPORTER END
+OBID_MAP "obid"
+  "teens" [ 13, 14, 15, 0x10, 17, 18, 19 ]
+  "remainder" OTHER
+OBID_MAP END
+SSL_CONFIG "ssl_config5"
+  FLUSH_TIME     1000
+  MAP ( "obid" )
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config6"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "ssl_config6"
+  SSL_DEDUP
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config7"
+  PATH "/dev/null"
+  SSL_DEDUP
+EXPORTER END
+SSL_CONFIG "ssl_config7"
+  SSL_DEDUP
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config8"
+  PATH "/dev/null"
+  SSL_DEDUP_ONLY
+EXPORTER END
+SSL_CONFIG "ssl_config8"
+  SSL_DEDUP
+SSL_CONFIG END
+EXPORTER TEXT SINGLE_FILE "ssl_config9"
+  PATH "/dev/null"
+EXPORTER END
+SSL_CONFIG "ssl_config9"
+  ISSUER [ 14, 15 ]
+  SUBJECT [ 14, 15 ]
+  OTHER [ 14, 15 ]
+  EXTENSIONS [ 14, 15 ]
+SSL_CONFIG END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "${tdir}"
+  DPI_ONLY
+  MULTI_FILES
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+  DEDUP_PER_FLOW
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+DPI_CONFIG "name-unrelated-to-exporter"
+  TABLE my_http_table [111, 112, 113, 114, 115]
+DPI_CONFIG END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "dpi_only"
+  PATH "/dev/null"
+  DPI_ONLY
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "dedup_config"
+  PATH "${tdir}"
+EXPORTER END
+VLAN_MAP "50"
+  "under50" [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49]
+  "fifty"   [50]
+  "over50"  OTHER
+VLAN_MAP END
+DEDUP_CONFIG "dedup_config"
+  PREFIX "useragent" SIP [111]
+  PREFIX "host" DIP [120]
+  PREFIX "p0f" [36, 37, 107]
+  PREFIX "dns" SIP [179]
+  PREFIX "ssl" SIP MAP("50") [244]
+  ADD_EXPORTER_NAME
+DEDUP_CONFIG END
+EXPORTER IPFIX SINGLE_FILE "dedup_config2"
+  PATH "${tdir}/file-prefix"
+EXPORTER END
+VLAN_MAP "zero"
+  "zero"  [0]
+  DISCARD OTHER
+  # on previous line, "DISCARD OTHER" is one token; additional whitespace
+  # between them would treat them as two tokens
+VLAN_MAP END
+DEDUP_CONFIG "dedup_config2"
+  FILE_PREFIX "useragent" SIP MAP("zero") [111]
+DEDUP_CONFIG END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+STATS_TIMEOUT 65500
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "dedup_per_flow"
+  PATH "/dev/null"
+  DEDUP_PER_FLOW
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+STATS_TIMEOUT 65500
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER TEXT SINGLE_FILE "dns_dedup"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "dns_dedup_only"
+  PATH "/dev/null"
+  DNS_DEDUP_ONLY
+EXPORTER END
+EXPORTER TEXT SINGLE_FILE "dns_config"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config"
+  MAX_HIT_COUNT  100
+  BASE64_ENCODE
+DNS_DEDUP END
+EXPORTER TEXT SINGLE_FILE "dns_config2"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config2"
+  FLUSH_TIME     600
+  LAST_SEEN
+DNS_DEDUP END
+EXPORTER TEXT SINGLE_FILE "dns_config3"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config3"
+  RECORDS [ 1, 28 ]
+DNS_DEDUP END
+EXPORTER TEXT SINGLE_FILE "dns_config4"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config4"
+  RECORDS [ 2, 5 ]
+DNS_DEDUP END
+EXPORTER TEXT SINGLE_FILE "dns_config5"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config5"
+  RECORDS [ 6, 12, 15, 16 ]
+DNS_DEDUP END
+EXPORTER TEXT SINGLE_FILE "dns_config6"
+  PATH "/dev/null"
+  DNS_DEDUP
+EXPORTER END
+DNS_DEDUP "dns_config6"
+  RECORDS [ 33 ]
+DNS_DEDUP END
+
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE "flow_only"
+  PATH "/dev/null"
+  FLOW_ONLY
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "dpi_only"
+  PATH "/dev/null"
+  DPI_ONLY
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "no_stats"
+  PATH "/dev/null"
+  NO_STATS
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "stats_only"
+  PATH "/dev/null"
+  STATS_ONLY
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "no_flow_stats"
+  PATH "/dev/null"
+  NO_FLOW_STATS
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "no_flow"
+  PATH "/dev/null"
+  NO_FLOW
+EXPORTER END
+EXPORTER IPFIX SINGLE_FILE "dedup_only"
+  PATH "/dev/null"
+  DEDUP_ONLY
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "/dev/null"
+  sourceTransportPort != 0
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  collector == "collector"
+EXPORTER END
+FILTER
+  "silkAppLabel" == 80
+  sourceIPv4Address != 203.0.113.98
+  destinationIPv6Address != 2001:db8::be:bad
+  destinationIPv6Address IN_LIST [ 2001:db8::, ::, ::ffff:cb00:71ca, ::ffff:203.0.113.203, 2001:db8:a001:b002:c003:d004:e005:f006 ]
+  dnsA IN_LIST [ 203.0.113.250,  203.0.113.251,  203.0.113.252 ]
+  sourceTransportPort <= 1024
+  destinationTransportPort > 1024
+  protocolIdentifier IN_LIST [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99]
+  interfaceName NOT_IN_LIST [ "foo", "bar", "baz" ]
+  sourceMacAddress == "abcdef"
+  collector == "collector"
+  samplingProbability < 3.1415927
+FILTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE "collector"
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  DNS_DEDUP
+  DNS_RR
+  SSL_DEDUP
+EXPORTER END
+EOF
+run_sm_ok ${testnum} --config="${config}" --test-config
+remove_if_success "${config}"
+
+
+
+#  Remove temporary directory if it is empty
+test -d "${tdir}" && rmdir "${tdir}" 2>/dev/null
+
+#  Exit with success
+exit 0

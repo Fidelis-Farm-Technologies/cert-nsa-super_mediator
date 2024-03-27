@@ -1,0 +1,11 @@
+For question, comments, and support, please send email to 
+<netsa-help@cert.org>.
+
+Emily Sarneso is the primary maintainer and principal designer and
+implementor of super_mediator.  All features and implementation have been
+implemented by Emily Sarneso.
+
+Chris Inacio worked on an initial sketch of the super_mediator tool for
+FloCon.  Brian Trammel initiated development of the underlying fixbuf
+library and worked on IPFIX mediator requirements and needs in the IETF
+IPFIX working group.

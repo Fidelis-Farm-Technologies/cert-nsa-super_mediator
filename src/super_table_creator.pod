@@ -1,0 +1,557 @@
+##  super_table_create manual page   -*- mode: text; fill-column: 78 -*-
+##
+
+=pod
+
+=begin html
+
+<!--
+    Copyright 2012-2023 Carnegie Mellon University
+    See license information in LICENSE.txt.
+-->
+<!--
+    @DISTRIBUTION_STATEMENT_BEGIN@
+    Super Mediator 2.0.0
+
+    Copyright 2023 Carnegie Mellon University.
+
+    NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+    INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+    UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+    AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+    PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+    THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+    ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+    INFRINGEMENT.
+
+    Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+    contact permission@sei.cmu.edu for full terms.
+
+    [DISTRIBUTION STATEMENT A] This material has been approved for public
+    release and unlimited distribution.  Please see Copyright notice for
+    non-US Government use and distribution.
+
+    GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+    Contract No.: FA8702-15-D-0002
+    Contractor Name: Carnegie Mellon University
+    Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+
+    The Government's rights to use, modify, reproduce, release, perform,
+    display, or disclose this software are restricted by paragraph (b)(2) of
+    the Rights in Noncommercial Computer Software and Noncommercial Computer
+    Software Documentation clause contained in the above identified
+    contract. No restrictions apply after the expiration date shown
+    above. Any reproduction of the software or portions thereof marked with
+    this legend must also reproduce the markings.
+
+    This Software includes and/or makes use of Third-Party Software each
+    subject to its own license.
+
+    DM23-2321
+    @DISTRIBUTION_STATEMENT_END@
+-->
+
+=end html
+
+=head1 NAME
+
+B<super_table_creator> - MySQL Database Schema Creator for super_mediator
+
+=head1 SYNOPSIS
+
+    super_table_creator [--out MYSQL_DB_HOSTNAME]
+                        [--name MYSQL_USER_NAME]
+                        [--pass MYSQL_PASSWORD]
+                        [--database DATABASE_NAME]
+                        [--version]
+                        [--flow-only]
+                        [--no-index]
+                        [--dns-dedup]
+                        [--dedup-last-seen]
+                        [--flow-stats]
+                        [--yaf-stats]
+                        [--dedupflow]
+                        [--dedup TABLE_NAME]
+                        [--ssl-certs]
+                        [--ssl-dedup]
+
+=head1 DESCRIPTION
+
+B<super_table_creator> creates the MySQL database tables for use with
+B<super_mediator> TEXT Exporters.  B<super_mediator> exports deep packet
+inspection and flow information to CSV Files.  CSV files can be imported
+into databases using tools such as mysqlimport.
+
+=head1 OPTIONS
+
+The following options configure where B<super_table_creator> creates
+database tables and which tables to create.
+
+=over 4
+
+=item B<--out> I<MYSQL_DB_HOSTNAME>
+
+I<MYSQL_DB_HOSTNAME> is the hostname or IP address where the MySQL
+Database lives.  Default is localhost.
+
+=item B<--name> I<MYSQL_USER_NAME>
+
+I<MYSQL_USER_NAME> is the user name to use when connecting to the MySQL
+server.  Default is root.
+
+=item B<--pass> I<MYSQL_PASSWORD>
+
+I<MYSQL_PASSWORD> is the password to use when connecting to the MySQL
+server. No Default.
+
+=item B<--database> I<DATABASE_NAME>
+
+I<DATABASE_NAME> is the name of the database to create, or the name
+of the pre-existing database to create the table(s).
+
+=item B<--version>
+
+Print the version and exit.
+
+=item B<--flow-only>
+
+Create the full flow table and exit.  The full flow table has the following
+fields:
+
+    column name    | size            | description
+
+    stime          | DATETIME        | flow start time
+
+    etime          | DATETIME        | flow end time
+
+    duration       | DECIMAL(10,3)   | duration
+
+    rtt            | DECIMAL(10, 3)  | round trip time
+
+    protocol       | TINYINT         | flow protocol
+
+    sip            | VARCHAR(40)     | source IP address
+
+    sport          | MEDIUMINT       | source port
+
+    pkt            | BIGINT          | packetTotalCount
+
+    oct            | BIGINT          | octetTotalCount
+
+    att            | MEDIUMINT       | flow attributes
+
+    mac            | VARCHAR(18)     | source MAC Address
+
+    dip            | VARCHAR(40)     | destination IP Address
+
+    dport          | MEDIUMINT       | destination Transport Port
+
+    rpkt           | BIGINT          | reversePacketTotalCount
+
+    roct           | BIGINT          | reverseOctetTotalCount
+
+    ratt           | MEDIUMINT       | reverse flow attributes
+
+    rmac           | VARCHAR(18)     | destination MAC Address
+
+    iflags         | VARCHAR(10)     | initial TCP Flags
+
+    uflags         | VARCHAR(10)     | union TCP Flags
+
+    isn            | VARCHAR(10)     | initial sequence number (hex)
+
+    risn           | VARCHAR(10)     | reverse initial sequence number (hex)
+
+    vlan           | VARCHAR(3)      | vlan ID (hex)
+
+    app            | MEDIUMINT       | application label
+
+    ent            | INT             | entropy
+
+    rent           | INT             | reverse entropy
+
+    reason         | VARCHAR(10)     | flow end reason
+
+=item B<--no-index>
+
+If present, put flow index information into each table.  Otherwise, a
+separate flow index table is created and it will be necessary to join the flow
+index table with the application protocol table to retrieve all information
+related to a particular flow.  The following fields will be added to each DPI table
+in place of the flow key hash, stime, and obid:
+
+    column name    | size            | description
+
+    stime          | DATETIME        | flow start milliseconds
+
+    sip            | VARCHAR(40)     | source IP address
+
+    dip            | VARCHAR(40)     | destination IP Address
+
+    sport          | MEDIUMINT       | source Transport port
+
+    dport          | MEDIUMINT       | destination transport port
+
+    vlan           | INT             | vlan ID
+
+    obid           | INT             | observation ID of the flow sensor
+
+=item B<--dns-dedup>
+
+If present, create the default DNS deduplication table and exit.  The default
+table consists of 4 columns.  If using the I<LAST_SEEN> option in the
+super_mediator.conf(1) file, use the I<--dedup-last-seen> option.  The
+default DNS deduplication has the following columns:
+
+    column name    | size            | description
+
+    first_seen     | DATETIME        | flow start time DNS Record was first seen.
+
+    rrtype         | MEDIUMINT       | type of resource record (A, NS, CNAME, etc.)
+
+    rrname         | VARCHAR(270)    | domain name found in RNAME in Resource Record
+
+    rrval          | VARCHAR(300)    | RDATA in Resource Record
+
+=item B<--dedup-last-seen>
+
+If present, create the extended DNS deduplication table and exit.  The extended
+table consists of 6 columns, the above 4 columns plus the last time seen and the
+hit count:
+
+    column name    | size            | description
+
+    first_seen     | DATETIME        | flow start time DNS Record was first seen.
+
+    last_seen      | DATETIME        | flow start time of last record seen before export
+
+    rrtype         | MEDIUMINT       | type of resource record (A, NS, CNAME, etc.)
+
+    rrname         | VARCHAR(270)    | domain name found in RNAME in Resource Record
+
+    hitcount       | INT             | number of records seen between first_seen and last_seen.
+
+    rrval          | VARCHAR(300)    | RDATA in Resource Record
+
+=item B<--flow-stats>
+
+If present, create the flow statistics table.  As of B<yaf> 2.3.0, B<yaf> will
+export extended flow information if B<yaf> is run with B<--flow-stats>.
+B<super_mediator> will collect and export this information in CSV format,
+if available.  The table will be created in the following format:
+
+    column name    | size            | description
+
+    flow_key       | INT             | flow key hash
+
+    stime          | BIGINT          | flow start time
+
+    obid           | INT             | observation ID
+
+    tcpurg         | BIGINT          | number of packets with the TCP urgent flag set.
+
+    smallpkt       | BIGINT          | number of packets that are smaller than 60 bytes
+
+    nonempty       | BIGINT          | number of packets with a non-zero payload
+
+    datalen        | BIGINT          | total payload byte count
+
+    avgitime       | BIGINT          | average interarrival time
+
+    firstpktlen    | INT             | length of first non-zero payload
+
+    largepktct     | BIGINT          | number of packets that were larger than 220 bytes
+
+    maxpktsize     | INT             | largest payload length transferred in the flow.
+
+    firsteight     | SMALLINT        | Directionality for the first 8 non-empty packets
+
+    stddevlen      | BIGINT          | standard deviation of payload length
+
+    stddevtime     | BIGINT          | standard deviation of interarrival time
+
+    avgdata        | BIGINT          | average payload length in forward direction
+
+    revtcpurg      | BIGINT          | number of packets with the TCP urgent flag set.
+
+    revsmallpkt    | BIGINT          | number of packets that are smaller than 60 bytes
+
+    revnonempty    | BIGINT          | number of packets with a non-zero payload
+
+    revdatalen     | BIGINT          | total payload byte count
+
+    revavgitime    | BIGINT          | average interarrival time
+
+    revfirstpktlen | INT             | length of first non-zero payload
+
+    revlargepktct  | BIGINT          | number of packets that were larger than 220 bytes
+
+    revmaxpktsize  | INT             | largest payload length transferred in the flow.
+
+    revstddevlen   | BIGINT          | standard deviation of payload length
+
+    revstddevtime  | BIGINT          | standard deviation of interarrival time
+
+    revavgdata     | BIGINT          | average payload length in reverse direction
+
+=item B<--yaf-stats>
+
+If present, create the yaf process statistics table, "yaf_stats".
+As of B<yaf> 2.0.0, B<yaf> will export process statistics every 5 minutes
+by default.  B<super_mediator> will collect and write this information to
+the log file and to the TEXT exporters.  It is possible to configure an
+exporter to only process yaf statistics so they can be imported to a database.
+The following table can be used to store yaf process statistics.
+
+    column name      | size            | description
+
+    ts               | TIMESTAMP       | auto insert the current time
+
+    flows            | BIGINT          | total exported flow count
+
+    packets          | BIGINT          | total exported packet count
+
+    dropped          | BIGINT          | total packets dropped by yaf
+
+    ignored          | BIGINT          | total packets ignored due to improper headers
+
+    expired_frags    | BIGINT          | total fragments expired
+
+    assembled_frags  | BIGINT          | total fragments assembled
+
+    flush_events     | INT             | number of times flow table flushed
+
+    table_peak       | INT             | max. number of flows in flow table
+
+    yaf_ip           | VARCHAR         | exporter IP address
+
+    yaf_id           | INT             | observation domain of exporter
+
+    flow_rate        | INT             | mean flow rate
+
+    packet_rate      | INT             | mean packet rate
+
+=item B<--dedupflow>
+
+If present, add a column between id and data for the hit count which is
+present when B<super_mediator> is configured with B<DEDUP_PER_FLOW>.  This
+option can be used with existing tables as it modifies the tables after
+initially creating them.  This option only modifies the HTTP, SLP, IMAP,
+SMTP, POP3, IRC, FTP, SIP, RTSP, SSH, MODBUS, and ENIP tables.  The other
+protocols are not affected by the DEDUP_PER_FLOW option.
+
+=item B<--dedup> I<TABLE_NAME>
+
+If present, add the table with I<TABLE_NAME> to the database given
+to B<--database> and exit.  This table's schema corresponds with the CSV output
+format of files produced by the DEDUP_CONFIG configuration.  This table will
+have the following schema:
+
+    column name      | size            | description
+
+    first_seen       | DATETIME        | first time ip, data tuple was seen
+
+    last_seen        | DATETIME        | last time ip, data tuple was seen
+
+    ip               | VARCHAR(40)     | src or dst ipv4 or ipv6 address
+
+    hash             | INT             | flow key hash of last flow with ip, data tuple
+
+    hitcount         | BIGINT          | number of times ip, data tuple was seen
+
+    data             | VARCHAR(500)    | data that corresponds with configured info element ID
+
+=item B<--ssl-certs>
+
+If present add the following two tables to the database specified by
+B<--database> and exit.  These two tables correspond to the CSV output
+format of the SSL_DEDUP_ONLY and SSL_DEDUP configurations in B<super_mediator>.
+The certs table stores characteristics of certificates (CERT_FILE) and the certs_dedup
+table stores certificate metadata and hitcounts.  The certs table has the following
+schema:
+
+    column name      | size            | description
+
+    serial           | VARCHAR(150)    | serial number of X.509 Certificate
+
+    issuer           | VARCHAR(500)    | Issuer's common name in X.509 Certificate
+
+    stime            | DATETIME        | first time certificate was seen
+
+    id               | INT             | the object/member ID of the data
+
+    ISE              | VARCHAR(2)      | Issuer(I), Subject(S), Extension(E)
+
+    cert_no          | SMALLINT        | Order in certificate chain
+
+    data             | VARCHAR(500)    | data that corresponds with id
+
+The certs_dedup table will have the following schema:
+
+    column name      | size            | description
+
+    first_seen       | DATETIME        | first time ip, data tuple was seen
+
+    last_seen        | DATETIME        | last time ip, data tuple was seen
+
+    serial           | VARCHAR(150)    | serial number of X.509 Certificate
+
+    hitcount         | BIGINT          | number of times ip, data tuple was seen
+
+    issuer           | VARCHAR(500)    | Issuer's common name in X.509 Certificate
+
+=item B<--ssl-dedup>
+
+If present, create the ssl_ip_dedup table that follows the same format
+as SSL certificate de-duplicated data configured in the DEDUP_CONFIG block
+of B<super_mediator.conf(1)> and exit.
+This certificate information is de-duplicated
+by IP address and certificate chain.  It has the following schema:
+
+    column name      | size            | description
+
+    first_seen       | DATETIME        | first time ip, cert chain was seen
+
+    last_seen        | DATETIME        | last time ip, cert chain was seen
+
+    ip               | VARCHAR(40)     | src or dst ipv4 or ipv6 address
+
+    hash             | INT             | flow key hash of last flow with ip, cert chain tuple
+
+    hitcount         | BIGINT          | number of times ip, cert chain was seen
+
+    serial1          | VARCHAR(150)    | serial number of End-user certificate
+
+    issuer1          | VARCHAR(500)    | Issuer's common name of End-user Certificate
+
+    serial2          | VARCHAR(150)    | serial number of Intermediate/Root CA certificate
+
+    issuer2          | VARCHAR(500)    | Issuer's common name of Intermediate/Root CA Certificate
+
+=back
+
+=head1 DPI Tables
+
+=head2 Flow Index Table
+
+Unless I<--no-index> is present, the following B<flow> table will be created:
+
+    column name    | size            | description
+
+    flow_key       | INT             | flow key hash
+
+    stime          | BIGINT          | flow start milliseconds
+
+    sip            | VARCHAR(40)     | source IP address
+
+    dip            | VARCHAR(40)     | destination IP Address
+
+    protocol       | TINYINT         | flow protocol
+
+    sport          | MEDIUMINT       | source transport port
+
+    dport          | MEDIUMINT       | destination transport port
+
+    vlan           | INT             | vlan ID
+
+    obid           | INT             | observation ID of flow sensor
+
+Together the flow key, stime, and obid will create a primary key to join
+with other tables.
+
+=head2 DNS
+
+    column name    | size            | description
+
+    flow_key       | INT             | flow key hash
+
+    stime          | BIGINT          | flow start milliseconds
+
+    obid           | INT             | observation ID of flow sensor
+
+    qr             | VARCHAR(1)      | Query (Q) or Response (R)
+
+    id             | INT             | query or response ID
+
+    section        | TINYINT         | section of DNS Packet
+
+    nx             | TINYINT         | NXDomain (1) or Not (0)
+
+    auth           | TINYINT         | Authoritative Response (1) or Not (0)
+
+    type           | MEDIUMINT       | Resource Record Type (1,2,5,6,..)
+
+    ttl            | INT             | Time to Live
+
+    name           | VARCHAR(255)    | domain name from RRNAME
+
+    val            | VARCHAR(255)    | resource record data from RRDATA.
+
+=head2 TLS
+
+The X.509 Certificate table has the following format:
+
+    column name    | size            | description
+
+    flow_key       | INT             | flow key hash
+
+    stime          | BIGINT          | flow start milliseconds
+
+    obid           | INT             | observation ID of flow sensor
+
+    id             | MEDIUMINT       | information element ID
+
+    cert_type      | VARCHAR(5)      | Subject (S) or Issuer (I)
+
+    cert_no        | TINYINT         | order in certificate chain
+
+    data           | VARCHAR(500)    | X.509 Cert Value.
+
+=head2 HTTP, IMAP, SLP, SMTP, POP3, IRC, FTP, TFTP, SIP, RTSP, MySQL, p0f, DHCP, SSH, NNTP,
+
+These tables all have the same format:
+
+    column name    | size            | description
+
+    flow_key       | INT             | flow key hash
+
+    stime          | BIGINT          | flow start milliseconds
+
+    obid           | INT             | observation ID of flow sensor
+
+    id             | MEDIUMINT       | information element ID
+
+    count*         | INT             | hit count *optional (--dedupflow)
+
+    data           | VARCHAR(500)    | data
+
+=head1 Examples
+
+
+In the following examples, the dollar sign ("$") represents the shell
+prompt.  The text after the dollar sign represents the command line.
+Lines have been wrapped for improved readability, and the back slash
+("\") is used to indicate a wrapped line.
+
+=over 1
+
+$ super_table_creator --name dbadmin --password jkab7$3 \
+     --database my_flows --flow-only
+
+=back
+
+=head1 Known Issues
+
+Bug reports may be sent directly to the Network Situational Awareness team at
+E<lt>netsa-help@cert.orgE<gt>.
+
+=head1 AUTHORS
+
+Emily Sarneso and the CERT Network Situational Awareness Group Engineering Team,
+E<lt>http://www.cert.org/netsaE<gt>.
+
+=head1 SEE ALSO
+
+yaf(1)
+
+=cut

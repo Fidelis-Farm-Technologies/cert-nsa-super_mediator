@@ -1,0 +1,700 @@
+##  super_mediator manual page   -*- mode: text; fill-column: 78 -*-
+##
+
+=pod
+
+=begin html
+
+<!--
+    Copyright 2012-2023 Carnegie Mellon University
+    See license information in LICENSE.txt.
+-->
+<!--
+    @DISTRIBUTION_STATEMENT_BEGIN@
+    Super Mediator 2.0.0
+
+    Copyright 2023 Carnegie Mellon University.
+
+    NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+    INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+    UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+    AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+    PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+    THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+    ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+    INFRINGEMENT.
+
+    Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+    contact permission@sei.cmu.edu for full terms.
+
+    [DISTRIBUTION STATEMENT A] This material has been approved for public
+    release and unlimited distribution.  Please see Copyright notice for
+    non-US Government use and distribution.
+
+    GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+    Contract No.: FA8702-15-D-0002
+    Contractor Name: Carnegie Mellon University
+    Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+
+    The Government's rights to use, modify, reproduce, release, perform,
+    display, or disclose this software are restricted by paragraph (b)(2) of
+    the Rights in Noncommercial Computer Software and Noncommercial Computer
+    Software Documentation clause contained in the above identified
+    contract. No restrictions apply after the expiration date shown
+    above. Any reproduction of the software or portions thereof marked with
+    this legend must also reproduce the markings.
+
+    This Software includes and/or makes use of Third-Party Software each
+    subject to its own license.
+
+    DM23-2321
+    @DISTRIBUTION_STATEMENT_END@
+-->
+
+=end html
+
+=head1 NAME
+
+B<super_mediator> - IPFIX Mediator
+
+=head1 SYNOPSIS
+
+     super_mediator   [--config CONFIG_FILE_NAME]
+                      [--test-config]
+                      [--ipfix-input TRANSPORT_PROTOCOL]
+                      [--ipfix-port PORT]
+                      [--polling-interval POLL_TIME]
+                      [--move-dir PROCESSED_INPUT_DIRECTORY]
+                      [--no-locked-files]
+                      [--out OUTPUT_SPECIFIER]
+                      [--output-mode TRANSPORT_PROTOCOL]
+                      [--export-port PORT]
+                      [--rotate ROTATE_SECONDS]
+                      [--fields FIELD_LIST]
+                      [--print-headers]
+                      [--no-stats]
+		      [--preserve-obdomain]
+                      [--rewrite-ssl-certs]
+                      [--disable-metadata-export]
+                      [--ipsetfile IPSET_FILE]
+                      [--sleep MICROSECONDS]
+                      [--udp-temp-timeout TIMEOUT_SECONDS]
+                      [--log LOG_SPECIFIER]
+                      [--log-dir LOG_PATH]
+                      [--verbose]
+                      [--quiet]
+                      [--daemonize]
+		      [--pidfile PIDFILE_NAME]
+                      [--become-user UNPRIVILEGED_USER]
+                      [--become-group UNPRIVILEGED_GROUP]
+                      [INPUT_SPECIFIER [INPUT_SPECIFIER ...]]
+
+     super_mediator   --version
+
+     super_mediator   --help
+
+=head1 DESCRIPTION
+
+B<super_mediator> is an IPFIX Mediator to be used as a manifold for yaf(1)
+IPFIX export data.  It has multiple means of reading and writing IPFIX.
+A limited number of options can be specified on the command line.  For
+advanced configuration with multiple collectors, multiple exporters,
+and filtering, the configuration file super_mediator.conf(1) should be used.
+Command line arguments for collection will override collectors defined
+in the configuration file. Command line arguments for exporters will be ignored
+if a configuration file is provided.
+
+B<super_mediator> supports multiple incoming sources and multiple outgoing
+exporters.  It can read from an IPFIX file, watch for files in a given
+directory, or collect IPFIX from yaf(1) via TCP or UDP on a given host and
+port.  It can export to a single or to rotating IPFIX, CSV, or JSON files and
+to a network socket via UDP or TCP.
+
+B<super_mediator> can filter on import and/or export.  Filters can be defined
+in the configuration file.
+
+B<super_mediator> is capable of collecting all of YAF Deep Packet Inspection
+data (see yafdpi(1)). For advanced configuration of the DPI to CSV output, see
+super_mediator.conf(1).  For DNS, the B<super_mediator> can perform
+de-duplication on the incoming DNS resource records.  It will cache a key
+containing the resource record name (rrname), resource record type (rrtype),
+and the resource record value (rrval).  When a resource record is seen matching
+this key, the B<super_mediator> will increment the hit count and the last_seen
+timestamp associated with the record.  If it is a new record, the record will
+be exported. Each record will be exported to the appropriate exporter.  The
+text format is:
+
+    first_seen | rrtype | rrname | rrval
+
+(see below for IPFIX template)
+
+Records will be periodically flushed.  The default is to flush a record
+from the buffer once it has reached the desired hit count of 5000 or a new
+record has not been seen in 5 minutes.  These default behaviors can be
+modified in the configuration file.  Similarly, a file can be written upon
+flush time.  If this is the case, the text format would be:
+
+    first_seen | last_seen | rrtype | rrname | hitcount | rrval
+
+There is also the option to BASE 64 Encode all DNS domain names in a
+text file.  This option can be specified in the configuration file.
+
+=head1 OPTIONS
+
+=head2 Configuration File Option
+
+When possible, the configuration file should be used when running
+the B<super_mediator>.  However, some command line options were given as a
+convenience for quick analysis.
+
+=over 4
+
+=item B<--config> I<CONFIGURATION_FILE>
+
+I<CONFIGURATION_FILE> is the configuration file following the guidelines given
+in the B<super_mediator.conf> man page.  If this option is given, most other
+command line options are not allowed.
+
+=item B<--test-config>
+
+When given, B<super_mediator> exits after parsing the configuration file.
+
+=back
+
+=head2 Input Options
+
+These options control where B<super_mediator> will get its input.
+B<super_mediator> can read packets from a file, directory, or live on a TCP or
+UDP port.  By default, if no input options are given, B<super_mediator> reads
+an IPFIX stream on standard input.
+
+=over 4
+
+=item I<INPUT_SPECIFIER> [I<INPUT_SPECIFIER> ...]
+
+B<super_mediator> treats any command line values that are not associated with
+an option as an I<INPUT_SPECIFIER>.  Zero or more I<INPUT_SPECIFIER>s may be
+specified; each is treated as an IPFIX collector, and all specifiers must be
+the same type.  If B<--ipfix-input> is given, each I<INPUT_SPECIFIER> is the
+hostname or IP Address of the host to listen on.  If B<--polling-interval> or
+B<--move-dir> is given, each I<INPUT_SPECIFIER> is a directory that
+B<super_mediator> periodically scans for files to process.  If none of these
+options are given, the B<super_mediator> assumes each I<INPUT_SPECIFIER> is an
+IPFIX file.
+
+=item B<--ipfix-input> I<TRANSPORT_PROTOCOL>
+
+Causes B<super_mediator> to operate as an IPFIX network collector, listening
+for connections via the specified protocol I<TRANSPORT_PROTOCOL>, which must
+be either B<tcp> or B<udp>.  UDP is not recommended as it is not a reliable
+transport protocol and cannot guarantee delivery of messages.  The port to
+listen on is specified by the B<--ipfix-port> option and defaults to 18000;
+the hostname to listen on must be specified in the I<INPUT_SPECIFIER>.
+
+=item B<--ipfix-port> I<PORT>
+
+Requires the presence of B<--ipfix-input> and specifies the TCP or UDP port
+where B<super_mediator> listens for incoming connections.  If not present, the
+default port 18000 is used.  The hostname to listen on is specified in the
+I<INPUT_SPECIFIER>.
+
+=item B<--polling-interval> I<POLL_TIME>
+
+Causes the I<INPUT_SPECIFIER>(s) to be treated as directory name(s) and tells
+B<super_mediator> to process files in the directory(s) every I<POLL_TIME>
+seconds.  B<super_mediator> runs forever waiting for files to appear in the
+directory.  After processing the incoming files, B<super_mediator> deletes the
+files unless a B<--move-dir> is specified.
+
+=item B<--move-dir> I<PROCESSED_INPUT_DIRECTORY>
+
+Causes the I<INPUT_SPECIFIER>(s) to be treated as directory name(s) and tells
+B<super_mediator> to process files in the directory(s) periodically.  The
+default period is 30 seconds, but may be changed with the
+B<--polling-interval> option.  The incoming files are moved to
+I<PROCESSED_INPUT_DIRECTORY> after processing.  If B<--polling-interval> is
+specified and B<--move-dir> is not, the incoming files are deleted after they
+are processed.
+
+=item B<--no-locked-files>
+
+B<Currently unimplemented.> Tells B<super_mediator> to ignore the presence of
+lock files and process all files in the incoming directory when either
+B<--polling-interval> or B<--move> is specified.  By default,
+B<super_mediator> does not read files that are locked, which means they have
+the extension ".lock" appended to the end of the filename.  This can be used
+if B<super_mediator> is reading from a yaf(1) export directory and yaf(1) is
+run with B<--lock>.  This will prevent B<super_mediator> from removing the
+files out from under yaf(1).  This does not lock files that the
+B<super_mediator> is writing to.  Use the B<super_mediator> configuration file
+to enable locking of output files.
+
+=back
+
+=head2 Output Options
+
+These options control where B<super_mediator> will send its output.
+B<super_mediator> can write flows to an IPFIX file, text file, or to an IPFIX
+collector over TCP or UDP.  By default, if no options are given,
+B<super_mediator> writes IPFIX to standard out.
+
+=over 4
+
+=item B<--out> I<OUTPUT_SPECIFIER>
+
+I<OUTPUT_SPECIFIER> is an output specifier.  If B<--output-mode> is present,
+and set to TCP or UDP, the I<OUTPUT_SPECIFIER> specifies the hostname or IP
+address of the collector to which the flows will be exported.  If
+B<--output-mode> is set to TEXT, I<OUTPUT_SPECIFIER> is a filename in which
+the flows will be written in pipe-delimited (C<|>) format.  If
+B<--output-mode> is set to JSON, I<OUTPUT_SPECIFIER> is a filename in which
+the flows will be written as JSON.  Otherwise, I<OUTPUT_SPECIFIER> is a
+filename in which flows will be written in IPFIX Format.  The string B<-> may
+be used to write to standard output (the default).  If B<--rotate> is present,
+I<OUTPUT_SPECIFIER> is the prefix name of each output file to write to.  When
+writing to a network socket, B<super_mediator> must be able to make an initial
+connection to the I<OUTPUT_SPECIFIER> for B<super_mediator> to start.  If the
+connection is lost after the initial connection, B<super_mediator> will
+immediately retry the connection after reporting a warning message to the log.
+If the retry is unsuccessful, B<super_mediator> will retry the connection
+every 15 seconds until the connection is successful.  Flows will be lost while
+the connection is down.
+
+=item B<--output-mode> I<TRANSPORT_PROTOCOL>
+
+If present, causes B<super_mediator> to operate as an IPFIX, TEXT, or JSON
+exporter, exporting via the specified protocol I<TRANSPORT_PROTOCOL> to a
+collector (e.g rwflowpack, flowcap) named in the I<OUTPUT_SPECIFIER>.  Valid
+I<TRANSPORT_PROTOCOL> values are B<tcp>, B<udp>, B<text>, and B<json>.  UDP is
+not recommended, as it is not a reliable transport protocol and cannot
+guarantee delivery of messages.
+
+=item B<--export-port> I<PORT>
+
+If B<--output-mode> is present and set to TCP or UDP, export flows to port
+I<PORT>.  If not present, the default port 18001 will be used.  The host to
+export to is specified with the B<--out> option.
+
+=item B<--rotate> I<ROTATE_SECONDS>
+
+Causes the I<OUTPUT_SPECIFIER> to be treated as the B<prefix> of an output
+file name.  B<super_mediator> appends a timestamp to the prefix and
+periodically closes the output file and opens a new open.  This switch
+determines how often that occurs.
+
+=item B<--fields> I<FIELD_LIST>
+
+If present and B<--output-mode=TEXT> is also present, writes only the fields
+given in I<FIELD_LIST>. I<FIELD_LIST> is a list of IPFIX element names,
+separated by a comma.  The list of acceptable fields is nearly any IPFIX
+element.
+
+=item B<--print-headers>
+
+If present for TEXT Exporters, B<super_mediator> writes a header for delimited
+flow data.  If files rotate, it writes one header at the top of each flow
+data file.
+
+=item B<--no-stats>
+
+If present, B<super_mediator> does not forward yaf(1) process statistics
+records or log statistics.  It is possible to configure certain exporters to
+process stats while others ignore stats messages.  This must be done with
+through the B<super_mediator> configuration file.
+
+=item B<--preserve-obdomain>
+
+If present, B<super_mediator> will not overwrite the observation domain in the
+incoming IPFIX records.  If given and the incoming records do not have an
+observationDomainId element, the exported records will have a domain of zero.
+B<super_mediator>'s default behavior is to copy the observation domain ID from
+the incoming IPFIX messages' headers to the records it exports, overwriting
+any previous observationDomainId value in the records.
+
+=item B<--rewrite-ssl-certs>
+
+If specified, B<super_mediator> will, for IPFIX exporters, rewrite the
+SSL certificate records that are represented in a subTemplateList on
+the SSL DPI record (template 51722 (0xca0a)).  The rewriting changes
+the structure of template 51723 (0xca0b) and eliminates template 52756
+(0xce14).  The new SSL certificate record has explicit information
+elements for parts of the certificate's issuer and subject instead of
+having data stored in a list of key-value pairs.
+
+=item B<--disable-metadata-export>
+
+If present, B<super_mediator> does not include information element and
+template metadata in IPFIX output.
+
+=item B<--ipsetfile> I<IPSET_FILE>
+
+Exits the program due to missing IPset support
+
+=item B<--sleep> I<MICROSECONDS>
+
+If present, B<super_mediator> sleeps for I<MICROSECONDS> between each
+call to fBufAppend, which appends the IPFIX messages to the output source.
+This is useful if B<super_mediator> is reading an IPFIX file and transmitting
+IPFIX over UDP.  B<super_mediator> may send the messages too quickly for the
+IPFIX Collector to receive them (possibly dropping messages.)  This option
+is only available with one collector and one exporter when executing
+B<super_mediator> from the command line.
+
+=item B<--udp-temp-timeout> I<TIMEOUT_SECS>
+
+B<Currently unimplemented.> Set UDP template timeout in seconds if
+B<--ipfix-mode> is set to I<UDP>.  As per RFC 5101 recommendations,
+B<super_mediator> will attempt to export templates three times within
+I<TEMPLATE_SECS>.  The default template timeout period is 600 seconds (10
+minutes).
+
+=back
+
+=head2 Logging and Daemon Configuration
+
+=over 4
+
+=item B<--log> I<LOG_SPECIFIER>
+
+Specifies the destination for log messages.  B<LOG_FILE> can be a B<syslog(3)>
+facility name, the special value B<stderr> for standard error, or the absolute
+path to a file for file logging.  To write messages to rotating files in a
+directory, use the B<--log-dir> option.  The default log specifier is
+B<stderr>.  The log level can be specified by the B<LOGLEVEL> keyword in the
+B<super_mediator> configuration file or by using either B<--verbose> or
+B<--quiet>.  The default level is WARNING.
+
+=item B<--log-dir> I<LOG_PATH>
+
+Tells B<super_mediator> to write log messages to files in I<LOG_PATH>.
+I<LOG_PATH> must be a complete directory path.  The log files have the form
+F<LOG_PATH/sm-YYYYMMDD.log> where I<YYYYMMDD> is the current date.  The log
+files are rotated at midnight local time.  When the log files are rotated a
+new log is opened, the previous file is closed, and B<gzip(1)> is invoked on
+the previous day's log file.  (Old log files will not be removed by
+B<super_mediator>.)
+
+=item B<--verbose>
+
+Enables logging of all messages.  The default log level is B<WARNING>.  This
+option changes the log level to B<DEBUG> and logs all B<yaf(1)> and
+B<super_mediator> process statistics, along with any IO operations.
+
+=item B<--quiet>
+
+Turns off logging completely.  B<super_mediator> will not log errors.
+
+=item B<--daemonize>
+
+Causes B<super_mediator> to become a daemon.
+
+=item B<--pidfile> I<PIDFILE_NAME>
+
+Sets the complete path to the file in which B<super_mediator> writes its
+process ID (pid) when running as a daemon.  B<--pid-file> is ignored if
+B<--daemon> is not present.
+
+=back
+
+=head2 Privilege Options
+
+These options are used to cause B<super_mediator> to drop privileges when
+running as root for live capture purposes.
+
+=over 4
+
+=item B<--become-user> I<UNPRIVILEGED_USER>
+
+Tells B<super_mediator> to drop its privileges to I<UNPRIVILEGED_USER> after
+starting.  Using B<--become-user> requires B<super_mediator> to be run as root
+or setuid root. This option will cause all files written by B<super_mediator>
+to be owned by the user I<UNPRIVILEGED_USER> and the user's primary group; use
+B<--become-group> as well to change the group B<super_mediator> runs as for
+output purposes.
+
+We highly recommend the use of this option, especially in production
+environments, for security purposes.
+
+=item B<--become-group> I<UNPRIVILEGED_GROUP>
+
+Tells B<super_mediator> to change its privileges to I<UNPRIVILEGED_GROUP>
+after starting.  The B<--become-group> option allows changing the group from
+the default of the user given in B<--become-user>.  This option has no effect
+if given without the B<--become-user> option as well.
+
+=back
+
+=head2 Help Options
+
+=over 4
+
+=item B<--version>
+
+Instructs B<super_mediator> to print its version number and the optional
+features it supports to the standard output and then exit.
+
+=item B<--help>
+
+Causes B<super_mediator> to print a brief summary of its command line options
+and then exit.
+
+=back
+
+=head2 IPFIX Export Templates
+
+The following IPFIX fields are exported by the B<super_mediator>.  DPI
+information will be exported in the same format as received by yaf(1), with
+the exception of the de-duplicated DNS records.  Any statistics option
+messages will also be formatted in the same format as they are received.
+
+=head3 FLOW_ONLY Record
+
+Some fields are only exported if they are non-zero and were enabled in B<yaf>.
+B<super_mediator> exports many variations of the following template.  The
+following list contains all of the possible elements that could exist
+in the FLOW_ONLY record.  Reverse elements are only exported if
+reversePacketTotalCount or reversePacketDeltaCount is nonzero.
+
+    flowStartMilliseconds, IE 152, 8 octets, unsigned
+
+    flowEndMilliseconds, IE 153, 8 octets, unsigned
+
+    octetTotalCount, IE 85, 8 octets, unsigned
+
+    reverseOctetTotalCount Reverse IE 85 (PEN 29305), 8 octets, unsigned
+
+    packetTotalcount, IE 86, 8 octets, unsigned
+
+    reversePacketTotalcount, Reverse IE 86 (PEN 29305), 8 octets, unsigned
+
+    octetDeltaCount, IE 1, 8 octets, unsigned
+
+    reverseOctetDeltaCount, reverse IE 1 (PEN 29305), 8 octets, unsigned
+
+    packetDeltaCount, IE 2, 8 octets, unsigned
+
+    reversePacketDeltaCount, reverse IE 2 (PEN 29305), 8 octets, unsigned
+
+    sourceIPv6Address, IE 27, 16 octets, unsigned
+
+    destinationIPv6Address, IE 28, 16 octets, unsigned
+
+    sourceIPv4Address, IE 8, 4 octets, unsigned
+
+    destinationIPv4Address, IE 12, 4 octets, unsigned
+
+    sourceTransportPort, IE 7, 2 octets, unsigned
+
+    destinationTransportPort, IE 11, 2 octets, unsigned
+
+    flowAttributes, CERT (PEN 6871) IE 40, 2 octets, unsigned
+
+    reverseFlowAttributes, CERT (PEN 6871) IE 16424, 2 octets, unsigned
+
+    protocolIdentifier, IE 4, 1 octet, unsigned
+
+    flowEndReason, IE 136, 1 octet, unsigned
+
+    silkAppLabel, CERT (PEN 6871) IE 33, 2 octets, unsigned
+
+    reverseFlowDeltaMilliseconds, CERT (PEN 6871) IE 21, 4 octets, unsigned
+
+    tcpSequenceNumber, IE 184, 4 octets, unsigned
+
+    reverseTcpSequenceNumber, Reverse IE 184 (PEN 29305), 4 octets, unsigned
+
+    initialTCPFlags, CERT (PEN 6871) IE 14, 1 octet, unsigned
+
+    unionTCPFlags, CERT (PEN 6871) IE 15, 1 octet, unsigned
+
+    reverseInitialTCPFlags, CERT (PEN 6871) IE 16398, 1 octet, unsigned
+
+    reverseUnionTCPFlags, CERT (PEN 6871) IE 16399, 1 octet, unsigned
+
+    vlanId, IE 58, 2 octets, unsigned
+
+    reverseVlanId, Reverse IE 58 (PEN 29305), 2 octets, unsigned
+
+    ipClassOfService, IE 5, 1 octet, unsigned
+
+    reverseIpClassOfService, Reverse IE 15 (PEN 29305), 1 octet, unsigned
+
+    mplsTopLabelStackSection, IE 70, 3 octets, unsigned
+
+    mplsLabelStackSection2, IE 71, 3 octets, unsigned
+
+    mplsLabelStackSection3, IE 72, 3 octets, unsigned
+
+    observationDomainId, IE 149, 4 octets, unsigned
+
+        The observation domain ID of the yaf(1) process that
+        generated the flow.
+
+    subTemplateMultiList, IE 293, Variable Length
+
+=head3 DNS De-duplicated Record
+
+    flowStartMilliseconds, IE 152, 8 octets, unsigned
+
+        The time in milliseconds of when the DNS resource record was
+        first seen.
+
+    flowEndMilliseconds, IE 153, 8 octets, unsigned
+
+        The time in milliseconds of the last record seen by the
+        B<super_mediator>. This is only exported if the
+        B<super_mediator> is configured to LAST_SEEN.
+
+    sourceIPv4Address, IE 8, 4 octets, unsigned
+
+        The IPv4 Address found in a DNS A Record.
+
+    dnsTTL, CERT (PEN 6871) IE 199, 4 octets, unsigned
+
+        The maximum TTL seen for the aggregated DNS records.
+        This is only exported if the B<super_mediator> is
+        configured to LAST_SEEN.
+
+    dnsRRType, CERT (PEN 6871) IE 175, 2 octets, unsigned
+
+        The type of Resource Record.  This corresponds
+        with the QTYPE filed in the DNS Question Section
+        or the TYP field in the DNS Resource Record Section.
+
+    smDedupHitCount, CERT (PEN 6871) IE 929, 2 octets, unsigned
+
+        The number of times the B<super_mediator> saw
+        this record in the FLUSH TIMEOUT period.
+        This is only exported if the B<super_mediator> is
+        configured to LAST_SEEN.
+
+    dnsName, CERT (PEN 6871) IE 179, variable length
+
+        A DNS Response Name.  This field corresponds
+        with the NAME field in the DNS Resource Record Section.
+
+    smDNSData, CERT (PEN 6871) IE 927, variable length
+
+       A DNS Resource Record Data Element.  This field
+       corresponds with the RDATA in the DNS Resource
+       Record Section.  For CNAME records, this will be the
+       canonical name. For NS Records, this will be the
+       name server name.  For AAAA records, this will be an
+       IPv6 Address, etc.
+
+    observationDomainName IE 300, variable length
+
+       This field is populated if the DEDUP_CONFIG block was
+       configured with B<ADD_EXPORTER_NAME>
+       or DNS_DEDUP was configured with a B<VLAN_MAP> or B<OBID_MAP>.
+       See super_mediator.conf(1) for more information on MAPS.
+
+=head3 Tombstone Options Template
+
+B<Super_mediator> will forward and can optionally generate tombstone records
+using IPFIX Options Template Records.  These records are intended to allow the
+analysis of the time it takes for records to be processed by each tool (e.g.,
+YAF, Super Mediator, SiLK) in your environment.  Each tombstone record generated
+by  B<super_mediator> consists of six information elements: the observation
+domain ID set by the B<--observation-domain> argument, the exporting process ID
+which is the PID of the YAF process, a user- settable tombstone ID, a
+sequentially increasing  "tombstoneID" for each record, the timestamp of the
+record's creation, and a subTemplateList of the time each program interacted
+with the tombstone record. With ideal randomness and/or proper user arguments,
+the 4 IDs taken together should uniquely specify a record. Tombstone record
+generation is not on by default and can be turned on using the  TOMBSTONE_CONFIG
+section of the config file. Tombstone Records are only  sent/forwarded to
+exporters configured to receive stats records.
+
+The following Information Elements will be exported:
+
+    observationDomainId, IE 149, 4 octets, unsigned
+
+       The (user-set) observation domain of the generating sensor.
+
+    exportingProcessId, IE 144, 4 octets, unsigned
+
+       The PID of the generating sensor.
+
+    certToolTombstoneId, CERT (PEN 6871) IE 550, 4 octets, unsigned
+
+       A sequentially increasing identification number unique to each tombstone
+       record in a run of a given program.
+
+    certToolExporterConfiguredId, CERT (PEN 6871) IE 551, 2 octets, unsigned
+
+       An identification number for the record that is user specifiable at
+       runtime and shared across all records in a run of the given program.
+
+    observationTimeSeconds, IE 322, 4 octets, dateTimeSeconds
+
+       The UNIX timestamp of when the record was created.
+
+    certToolTombstoneAccessList, CERT (PEN 6871) IE 554, variable length, subTemplateList
+
+       A subTemplateList consisting of Tombstone Access Templates (see below)
+       that specify when each program that supports tombstone time-stamping
+       interacted with the tombstone record.
+
+=head3 Tombstone Access Template
+
+The following two Information Elements will be exported as a template within the
+subTemplateList of a Tombstone Options Template:
+
+    certToolId, CERT (PEN 6871) IE 553, 4 octets, unsigned
+
+       The identification number of the program that interacted with the record.
+       B<super_mediator> has and ID of 2.
+
+    observationTimeSeconds, IE 322, 4 octets, dateTimeSeconds
+
+       The UNIX timestamp of when the program interacted with the record.
+
+=head1 EXAMPLES
+
+To run super_mediator with the configuration file:
+
+C<super_mediator -c /usr/local/etc/super_mediator.conf>
+
+To read a yaf(1) file and write delimited text to the standard output:
+
+C<super_mediator -o - -m text yaffile.yaf>
+
+To listen for connections from yaf(1) via TCP and write to rotating text files:
+
+C<super_mediator --ipfix-port 18000 --ipfix-input TCP --out /tmp/mediator --rotate 120 --log /tmp/mediator.log -v localhost>
+
+To listen for connections from yaf(1) via UDP and send output to a rwflowpack process running on TCP port 18001:
+
+C<super_mediator -p 18000 --ipfix-input UDP -o localhost -m TCP --export-port 18001>
+
+To only print the time and 5-tuple for each flow to standard output:
+
+C<super_mediator -o - -m TEXT --fields=flowStartMilliseconds,flowEndMilliseconds,sourceIPv4Address,destinationIPv4Address,sourceTransportPort,destinationTransportPort,protocolIdentifier ./myyaffile.yaf>
+
+
+=head1 KNOWN ISSUES
+
+B<super_mediator> will not create new file directories.  All output
+directories must exist before you start B<super_mediator>.
+
+B<yaf> presently encodes the ICMP type and code information into the
+destinationTransportPort information element for ICMP and ICMP6 flows.
+B<super_mediator> running in TEXT output mode writes the type in the
+sourceTransportPort field and the ICMP code in the destinationTransportPort
+field.
+
+=head1 AUTHORS
+
+Emily Sarneso and the CERT Network Situational Awareness Group Engineering
+Team E<lt>http://www.cert.org/netsaE<gt>.  Bug reports and feature requests
+may be sent via email to E<lt>netsa-help@cert.orgE<gt>.
+
+=head1 SEE ALSO
+
+yaf(1) and the following IETF
+Internet RFCs: Specification of the IPFIX Protocol for Exchange of IP
+Traffic Flow Information B<RFC 5101>, Information Model for IP Flow Information
+Export B<RFC 5102>, Export of Structured Data in B<RFC 6313>.
+
+=cut

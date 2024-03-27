@@ -1,0 +1,220 @@
+#! /bin/sh
+
+##  Copyright 2021-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+
+##  ------------------------------------------------------------------------
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  Super Mediator 2.0.0
+##
+##  Copyright 2023 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Licensed under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  GOVERNMENT PURPOSE RIGHTS - Software and Software Documentation
+##  Contract No.: FA8702-15-D-0002
+##  Contractor Name: Carnegie Mellon University
+##  Contractor Address: 4500 Fifth Avenue, Pittsburgh, PA 15213
+##
+##  The Government's rights to use, modify, reproduce, release, perform,
+##  display, or disclose this software are restricted by paragraph (b)(2) of
+##  the Rights in Noncommercial Computer Software and Noncommercial Computer
+##  Software Documentation clause contained in the above identified
+##  contract. No restrictions apply after the expiration date shown
+##  above. Any reproduction of the software or portions thereof marked with
+##  this legend must also reproduce the markings.
+##
+##  This Software includes and/or makes use of Third-Party Software each
+##  subject to its own license.
+##
+##  DM23-2321
+##  @DISTRIBUTION_STATEMENT_END@
+##  ------------------------------------------------------------------------
+
+#  Run as part of "make check".
+#
+#  This file tests configuration files containing IPset filtering
+#  statements and use /dev/null as the input and output.  All commands
+#  in this file are expected to SUCCEED.
+#
+
+# name of this file
+test_script="`basename $0 .test`"
+
+# source the setup file
+if [ -f "tests/setup.sh" ] ; then
+    setup="tests/setup.sh"
+else
+    setup="${srcdir}/tests/setup.sh"
+fi
+. ${setup}
+
+# ensure basic things work
+check_sm_version
+check_make_temp
+check_make_tempdir
+
+testnum=0
+
+# For help in tracking errors
+set -x
+
+# Create a temporary directory
+tdir=`make_tempdir ${test_script}`
+
+# check status of ipset support
+have_ipset=`${super_mediator} --version 2>&1 | grep -ci 'ipset.*yes'`
+
+
+# IPSet file
+ipsetfile="emptyset.set"
+for dir in "" "tests/" "${srcdir}/" "${srcdir}/tests/" ; do
+    p="${dir}${ipsetfile}"
+    if [ -f "${p}" ] ; then
+        ipsetfile="${p}"
+        break
+    fi
+done
+check_files_exist "${ipsetfile}"
+
+
+# Number of tests
+echo 1..6
+
+
+# Always fails: Either unable to read /dev/null as an IPSet file or no
+# IPSet support in super_mediator.
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  sourceIPv4Address IN_LIST "/dev/null"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+# IPSet filter in EXPORTER: Succeed if have IPSet
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  sourceIPv4Address IN_LIST "${ipsetfile}"
+EXPORTER END
+EOF
+if test x${have_ipset} = x1 ; then
+  run_sm_ok ${testnum} --config="${config}"
+else
+  run_sm_xfail ${testnum} --config="${config}"
+fi
+remove_if_success "${config}"
+
+
+# IPSet filter in COLLECTOR: Succeed if have IPSet
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+  destinationIPv4Address IN_LIST "${ipsetfile}"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+if test x${have_ipset} = x1 ; then
+  run_sm_ok ${testnum} --config="${config}"
+else
+  run_sm_xfail ${testnum} --config="${config}"
+fi
+remove_if_success "${config}"
+
+
+# IPSet filter in FILTER block: Succeed if have IPSet
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+FILTER
+  sourceIPv6Address IN_LIST "${ipsetfile}"
+  destinationIPv6Address NOT_IN_LIST "${ipsetfile}"
+  AND_FILTER
+FILTER END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+EXPORTER END
+EOF
+if test x${have_ipset} = x1 ; then
+  run_sm_ok ${testnum} --config="${config}"
+else
+  run_sm_xfail ${testnum} --config="${config}"
+fi
+remove_if_success "${config}"
+
+
+# Always fails: Either cannot filter a port with an IPSet or no IPSet
+# support in super_mediator.
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  sourceTransportPort IN_LIST "${ipsetfile}"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+# Always fails: Cannot filter a COLLECTOR with an IPSet, cannot use
+# IN_LIST witha COLLECTOR, or no IPSet support in super_mediator.
+# This extra test exists because collector-based filters are handled
+# differently than the others.
+testnum=`expr 1 + ${testnum}`
+config=`make_temp ${test_script}-${testnum}`
+cat <<EOF >>${config}
+COLLECTOR SINGLE_FILE
+  PATH "/dev/null"
+COLLECTOR END
+EXPORTER IPFIX SINGLE_FILE
+  PATH "/dev/null"
+  collector IN_LIST "${ipsetfile}"
+EXPORTER END
+EOF
+run_sm_xfail ${testnum} --config="${config}"
+remove_if_success "${config}"
+
+
+#  Remove temporary directory if it is empty
+test -d "${tdir}" && rmdir "${tdir}" 2>/dev/null
+
+#  Exit with success
+exit 0
