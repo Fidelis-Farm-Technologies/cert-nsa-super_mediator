@@ -369,6 +369,20 @@ mdPrintRecordValue(
             }
             return TRUE;
 
+          case 300:
+          case 301:
+            if (json) {      
+                char* l7_ptr = ndpi_get_proto_name(exporter->ndpiStruct, value->v.u64);
+                if (l7_ptr) {
+                    g_string_append_printf(buf, "\"%s\"", l7_ptr);
+                }
+                else {
+                     g_string_append(buf, "\"\"");
+                }
+                return TRUE;
+            }
+            break;
+
           case 317:
             /* sslCertExtKeyUsage -- expect this to be a set of flags encoded
              * as a bitfield (ASN.1 type 0x03) */

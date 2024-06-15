@@ -1,5 +1,5 @@
 
-#line 2 "mediator_config_lex.c"
+#line 3 "mediator_config_lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -46,7 +46,6 @@ typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
-typedef uint64_t flex_uint64_t;
 #else
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
@@ -155,7 +154,7 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 typedef size_t yy_size_t;
 #endif
 
-extern yy_size_t yyleng;
+extern int yyleng;
 
 extern FILE *yyin, *yyout;
 
@@ -198,7 +197,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -267,8 +266,8 @@ static YY_BUFFER_STATE * yy_buffer_stack = NULL; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when yytext is formed. */
 static char yy_hold_char;
-static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
-yy_size_t yyleng;
+static int yy_n_chars;		/* number of characters read into yy_ch_buf */
+int yyleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = NULL;
@@ -295,7 +294,7 @@ static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file  );
 
 YY_BUFFER_STATE yy_scan_buffer ( char *base, yy_size_t size  );
 YY_BUFFER_STATE yy_scan_string ( const char *yy_str  );
-YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, yy_size_t len  );
+YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, int len  );
 
 void *yyalloc ( yy_size_t  );
 void *yyrealloc ( void *, yy_size_t  );
@@ -348,7 +347,7 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
  */
 #define YY_DO_BEFORE_ACTION \
 	(yytext_ptr) = yy_bp; \
-	yyleng = (yy_size_t) (yy_cp - yy_bp); \
+	yyleng = (int) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
@@ -1406,10 +1405,10 @@ static char *pipeconf_buf_ptr;
 
 /*  Tell uncrustify to ignore the next part of the file */
 /*  *INDENT-OFF* */
-#line 1372 "mediator_config_lex.c"
+#line 1409 "mediator_config_lex.c"
 #define YY_NO_INPUT 1
 
-#line 51 "mediator_config_lex.l"
+#line 88 "mediator_config_lex.l"
     /* state to use when a quoted string is too long */
 
 
@@ -1418,7 +1417,7 @@ static char *pipeconf_buf_ptr;
     /* numbers */
     /* various forms for IP addresses */
     /* date / time -- FIXME: Either parse this or get rid of it. */
-#line 1384 "mediator_config_lex.c"
+#line 1421 "mediator_config_lex.c"
 
 #define INITIAL 0
 #define ST_STRING 1
@@ -1460,7 +1459,7 @@ FILE *yyget_out ( void );
 
 void yyset_out  ( FILE * _out_str  );
 
-			yy_size_t yyget_leng ( void );
+			int yyget_leng ( void );
 
 char *yyget_text ( void );
 
@@ -1527,7 +1526,7 @@ static int input ( void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		yy_size_t n; \
+		int n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -1636,10 +1635,10 @@ YY_DECL
 		}
 
 	{
-#line 96 "mediator_config_lex.l"
+#line 133 "mediator_config_lex.l"
 
 
-#line 1605 "mediator_config_lex.c"
+#line 1642 "mediator_config_lex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1695,781 +1694,781 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 98 "mediator_config_lex.l"
+#line 135 "mediator_config_lex.l"
 {lineNumber++; return EOS;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 100 "mediator_config_lex.l"
+#line 137 "mediator_config_lex.l"
 ;
 	YY_BREAK
 /* symbols that are not operators */
 case 3:
 YY_RULE_SETUP
-#line 103 "mediator_config_lex.l"
+#line 140 "mediator_config_lex.l"
 {return LEFT_SQ_BRACKET;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 104 "mediator_config_lex.l"
+#line 141 "mediator_config_lex.l"
 {return RIGHT_SQ_BRACKET;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 105 "mediator_config_lex.l"
+#line 142 "mediator_config_lex.l"
 {return LEFT_PAREN;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 106 "mediator_config_lex.l"
+#line 143 "mediator_config_lex.l"
 {return RIGHT_PAREN;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 107 "mediator_config_lex.l"
+#line 144 "mediator_config_lex.l"
 {return COMMA;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 108 "mediator_config_lex.l"
+#line 145 "mediator_config_lex.l"
 {return WILD;}
 	YY_BREAK
 /* operators (fieldOperator_t), used in comparisons */
 case 9:
 YY_RULE_SETUP
-#line 111 "mediator_config_lex.l"
+#line 148 "mediator_config_lex.l"
 {yylval.oper = EQUAL; return VAL_OPER;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 112 "mediator_config_lex.l"
+#line 149 "mediator_config_lex.l"
 {yylval.oper = NOT_EQUAL; return VAL_OPER;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 113 "mediator_config_lex.l"
+#line 150 "mediator_config_lex.l"
 {yylval.oper = LESS_THAN; return VAL_OPER;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 114 "mediator_config_lex.l"
+#line 151 "mediator_config_lex.l"
 {yylval.oper = LESS_THAN_OR_EQUAL; return VAL_OPER;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 115 "mediator_config_lex.l"
+#line 152 "mediator_config_lex.l"
 {yylval.oper = GREATER_THAN; return VAL_OPER;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 116 "mediator_config_lex.l"
+#line 153 "mediator_config_lex.l"
 {yylval.oper = GREATER_THAN_OR_EQUAL; return VAL_OPER;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 117 "mediator_config_lex.l"
+#line 154 "mediator_config_lex.l"
 {yylval.oper = IN_LIST; return VAL_OPER;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 118 "mediator_config_lex.l"
+#line 155 "mediator_config_lex.l"
 {yylval.oper = NOT_IN_LIST; return VAL_OPER;}
 	YY_BREAK
 /* fields (mdAcceptFilterField_t) */
 case 17:
 YY_RULE_SETUP
-#line 121 "mediator_config_lex.l"
+#line 158 "mediator_config_lex.l"
 {yylval.field = DIP_ANY; return VAL_FIELD;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 122 "mediator_config_lex.l"
+#line 159 "mediator_config_lex.l"
 {yylval.field = DIP_ANY; return VAL_FIELD;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 123 "mediator_config_lex.l"
+#line 160 "mediator_config_lex.l"
 {yylval.field = DIP_V4; return VAL_FIELD;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 124 "mediator_config_lex.l"
+#line 161 "mediator_config_lex.l"
 {yylval.field = FLOWKEYHASH; return VAL_FIELD;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 125 "mediator_config_lex.l"
+#line 162 "mediator_config_lex.l"
 {yylval.field = FLOWKEYHASH; return VAL_FIELD;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 126 "mediator_config_lex.l"
+#line 163 "mediator_config_lex.l"
 {yylval.field = OBDOMAIN; return VAL_FIELD;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 127 "mediator_config_lex.l"
+#line 164 "mediator_config_lex.l"
 {yylval.field = OBDOMAIN; return VAL_FIELD;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 128 "mediator_config_lex.l"
+#line 165 "mediator_config_lex.l"
 {yylval.field = SIP_ANY; return VAL_FIELD;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 129 "mediator_config_lex.l"
+#line 166 "mediator_config_lex.l"
 {yylval.field = SIP_ANY; return VAL_FIELD;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 130 "mediator_config_lex.l"
+#line 167 "mediator_config_lex.l"
 {yylval.field = SIP_V4; return VAL_FIELD;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 131 "mediator_config_lex.l"
+#line 168 "mediator_config_lex.l"
 {yylval.field = VLAN; return VAL_FIELD;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 132 "mediator_config_lex.l"
+#line 169 "mediator_config_lex.l"
 {yylval.field = VLAN; return VAL_FIELD;}
 	YY_BREAK
 /* transport for collectors and exporters (mdConfTransport_t) */
 case 29:
 YY_RULE_SETUP
-#line 135 "mediator_config_lex.l"
+#line 172 "mediator_config_lex.l"
 {yylval.transport = MD_CONF_TPORT_DIRECTORY_POLL;
                          return VAL_TRANSPORT;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 137 "mediator_config_lex.l"
+#line 174 "mediator_config_lex.l"
 {yylval.transport = MD_CONF_TPORT_ROTATING_FILES;
                          return VAL_TRANSPORT;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 139 "mediator_config_lex.l"
+#line 176 "mediator_config_lex.l"
 {yylval.transport = MD_CONF_TPORT_SINGLE_FILE;
                          return VAL_TRANSPORT;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 141 "mediator_config_lex.l"
+#line 178 "mediator_config_lex.l"
 {yylval.transport = MD_CONF_TPORT_TCP;
                          return VAL_TRANSPORT;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 143 "mediator_config_lex.l"
+#line 180 "mediator_config_lex.l"
 {yylval.transport = MD_CONF_TPORT_UDP;
                          return VAL_TRANSPORT;}
 	YY_BREAK
 /* exporter format (mdExportFormat_t) */
 case 34:
 YY_RULE_SETUP
-#line 147 "mediator_config_lex.l"
+#line 184 "mediator_config_lex.l"
 {yylval.exportFormat = EF_IPFIX;
                          return VAL_EXPORT_FORMAT;}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 149 "mediator_config_lex.l"
+#line 186 "mediator_config_lex.l"
 {yylval.exportFormat = EF_JSON;
                          return VAL_EXPORT_FORMAT;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 151 "mediator_config_lex.l"
+#line 188 "mediator_config_lex.l"
 {yylval.exportFormat = EF_TEXT;
                          return VAL_EXPORT_FORMAT;}
 	YY_BREAK
 /* log levels (mdLogLevel_t) */
 case 37:
 YY_RULE_SETUP
-#line 155 "mediator_config_lex.l"
+#line 192 "mediator_config_lex.l"
 {yylval.log_level = MD_DEBUG; return VAL_LOGLEVEL;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 156 "mediator_config_lex.l"
+#line 193 "mediator_config_lex.l"
 {yylval.log_level = MESSAGE; return VAL_LOGLEVEL;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 157 "mediator_config_lex.l"
+#line 194 "mediator_config_lex.l"
 {yylval.log_level = QUIET; return VAL_LOGLEVEL;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 158 "mediator_config_lex.l"
+#line 195 "mediator_config_lex.l"
 {yylval.log_level = WARNING; return VAL_LOGLEVEL;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 159 "mediator_config_lex.l"
+#line 196 "mediator_config_lex.l"
 {yylval.log_level = ERROR; return VAL_LOGLEVEL;}
 	YY_BREAK
 /* TLS/SSL certifcate hashing/digest methods */
 case 42:
 YY_RULE_SETUP
-#line 162 "mediator_config_lex.l"
+#line 199 "mediator_config_lex.l"
 {yylval.certDigest = SM_DIGEST_MD5;
                                      return VAL_CERT_DIGEST;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 164 "mediator_config_lex.l"
+#line 201 "mediator_config_lex.l"
 {yylval.certDigest = SM_DIGEST_SHA1;
                                      return VAL_CERT_DIGEST;}
 	YY_BREAK
 /* keyword terminals, sorted by return value */
 case 44:
 YY_RULE_SETUP
-#line 169 "mediator_config_lex.l"
+#line 206 "mediator_config_lex.l"
 {return TOK_ADD_EXPORTER_NAME;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 170 "mediator_config_lex.l"
+#line 207 "mediator_config_lex.l"
 {return TOK_ADD_EXPORTER_NAME;}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 171 "mediator_config_lex.l"
+#line 208 "mediator_config_lex.l"
 {return TOK_ADD_EXPORTER_NAME;}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 172 "mediator_config_lex.l"
+#line 209 "mediator_config_lex.l"
 {return TOK_ADD_EXPORTER_NAME;}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 173 "mediator_config_lex.l"
+#line 210 "mediator_config_lex.l"
 {return TOK_AND_FILTER;}
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 174 "mediator_config_lex.l"
+#line 211 "mediator_config_lex.l"
 {return TOK_BASE_64;}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 175 "mediator_config_lex.l"
+#line 212 "mediator_config_lex.l"
 {return TOK_CERT_FILE;}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 176 "mediator_config_lex.l"
+#line 213 "mediator_config_lex.l"
 {return TOK_COLLECTOR;}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 177 "mediator_config_lex.l"
+#line 214 "mediator_config_lex.l"
 {return TOK_COLLECTOR_FILTER;}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 178 "mediator_config_lex.l"
+#line 215 "mediator_config_lex.l"
 {return TOK_DECOMPRESS_DIRECTORY;}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 179 "mediator_config_lex.l"
+#line 216 "mediator_config_lex.l"
 {return TOK_DEDUP_CONFIG;}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 180 "mediator_config_lex.l"
+#line 217 "mediator_config_lex.l"
 {return TOK_DEDUP_ONLY;}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 181 "mediator_config_lex.l"
+#line 218 "mediator_config_lex.l"
 {return TOK_DEDUP_PER_FLOW;}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 182 "mediator_config_lex.l"
+#line 219 "mediator_config_lex.l"
 {return TOK_DELETE;}
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 183 "mediator_config_lex.l"
+#line 220 "mediator_config_lex.l"
 {return TOK_DELIM;}
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 184 "mediator_config_lex.l"
+#line 221 "mediator_config_lex.l"
 {return TOK_DELIM;}
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 185 "mediator_config_lex.l"
+#line 222 "mediator_config_lex.l"
 {return TOK_DISABLE;}
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 186 "mediator_config_lex.l"
+#line 223 "mediator_config_lex.l"
 {return TOK_DISCARD;}
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 187 "mediator_config_lex.l"
+#line 224 "mediator_config_lex.l"
 {return TOK_DISCARD;}
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 188 "mediator_config_lex.l"
+#line 225 "mediator_config_lex.l"
 {return TOK_DNSRESPONSE_ONLY;}
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 189 "mediator_config_lex.l"
+#line 226 "mediator_config_lex.l"
 {return TOK_DNSRR;}
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 190 "mediator_config_lex.l"
+#line 227 "mediator_config_lex.l"
 {return TOK_DNSRR_ONLY;}
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 191 "mediator_config_lex.l"
+#line 228 "mediator_config_lex.l"
 {return TOK_DNS_DEDUP;}
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 192 "mediator_config_lex.l"
+#line 229 "mediator_config_lex.l"
 {return TOK_DNS_DEDUP_ONLY;}
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 193 "mediator_config_lex.l"
+#line 230 "mediator_config_lex.l"
 {return TOK_DPI_CONFIG;}
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 194 "mediator_config_lex.l"
+#line 231 "mediator_config_lex.l"
 {return TOK_DPI_DELIMITER;}
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 195 "mediator_config_lex.l"
+#line 232 "mediator_config_lex.l"
 {return TOK_DPI_FIELD_LIST;}
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 196 "mediator_config_lex.l"
+#line 233 "mediator_config_lex.l"
 {return TOK_DPI_ONLY;}
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 197 "mediator_config_lex.l"
+#line 234 "mediator_config_lex.l"
 {return TOK_END;}
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 198 "mediator_config_lex.l"
+#line 235 "mediator_config_lex.l"
 {return TOK_ESCAPE;}
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 199 "mediator_config_lex.l"
+#line 236 "mediator_config_lex.l"
 {return TOK_ESCAPE;}
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 200 "mediator_config_lex.l"
+#line 237 "mediator_config_lex.l"
 {return TOK_ESCAPE;}
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 201 "mediator_config_lex.l"
+#line 238 "mediator_config_lex.l"
 {return TOK_EXPORTER;}
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 202 "mediator_config_lex.l"
+#line 239 "mediator_config_lex.l"
 {return TOK_EXTENSIONS;}
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 203 "mediator_config_lex.l"
+#line 240 "mediator_config_lex.l"
 {return TOK_FIELDS;}
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 204 "mediator_config_lex.l"
+#line 241 "mediator_config_lex.l"
 {return TOK_FILE_PREFIX;}
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 205 "mediator_config_lex.l"
+#line 242 "mediator_config_lex.l"
 {return TOK_FILE_PREFIX;}
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 206 "mediator_config_lex.l"
+#line 243 "mediator_config_lex.l"
 {return TOK_FILTER;}
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 207 "mediator_config_lex.l"
+#line 244 "mediator_config_lex.l"
 {return TOK_FLOW_ONLY;}
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 208 "mediator_config_lex.l"
+#line 245 "mediator_config_lex.l"
 {return TOK_FLUSH_TIMEOUT;}
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 209 "mediator_config_lex.l"
+#line 246 "mediator_config_lex.l"
 {return TOK_FLUSH_TIMEOUT;}
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 210 "mediator_config_lex.l"
+#line 247 "mediator_config_lex.l"
 {return TOK_FULL;}
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 211 "mediator_config_lex.l"
+#line 248 "mediator_config_lex.l"
 {return TOK_GEN_TOMBSTONE;}
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 212 "mediator_config_lex.l"
+#line 249 "mediator_config_lex.l"
 {return TOK_GZIP;}
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 213 "mediator_config_lex.l"
+#line 250 "mediator_config_lex.l"
 {return TOK_GZIP;}
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 214 "mediator_config_lex.l"
+#line 251 "mediator_config_lex.l"
 {return TOK_HOSTNAME;}
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 215 "mediator_config_lex.l"
+#line 252 "mediator_config_lex.l"
 {return TOK_HOSTNAME;}
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 216 "mediator_config_lex.l"
+#line 253 "mediator_config_lex.l"
 {return TOK_INVARIANT;}
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 217 "mediator_config_lex.l"
+#line 254 "mediator_config_lex.l"
 {return TOK_IPSET_FILE;}
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 218 "mediator_config_lex.l"
+#line 255 "mediator_config_lex.l"
 {return TOK_ISSUER;}
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 219 "mediator_config_lex.l"
+#line 256 "mediator_config_lex.l"
 {return TOK_LAST_SEEN;}
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 220 "mediator_config_lex.l"
+#line 257 "mediator_config_lex.l"
 {return TOK_LOCK;}
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 221 "mediator_config_lex.l"
+#line 258 "mediator_config_lex.l"
 {return TOK_LOG_DIR;}
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 222 "mediator_config_lex.l"
+#line 259 "mediator_config_lex.l"
 {return TOK_LOG_DIR;}
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 223 "mediator_config_lex.l"
+#line 260 "mediator_config_lex.l"
 {return TOK_LOG_FILE;}
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 224 "mediator_config_lex.l"
+#line 261 "mediator_config_lex.l"
 {return TOK_LOG_FILE;}
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 225 "mediator_config_lex.l"
+#line 262 "mediator_config_lex.l"
 {return TOK_LOG_LEVEL;}
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 226 "mediator_config_lex.l"
+#line 263 "mediator_config_lex.l"
 {return TOK_LOG_LEVEL;}
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 227 "mediator_config_lex.l"
+#line 264 "mediator_config_lex.l"
 {return TOK_MAP;}
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 228 "mediator_config_lex.l"
+#line 265 "mediator_config_lex.l"
 {return TOK_MAX_BYTES;}
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 229 "mediator_config_lex.l"
+#line 266 "mediator_config_lex.l"
 {return TOK_MAX_HIT_COUNT;}
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 230 "mediator_config_lex.l"
+#line 267 "mediator_config_lex.l"
 {return TOK_MAX_SECONDS;}
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 231 "mediator_config_lex.l"
+#line 268 "mediator_config_lex.l"
 {return TOK_MERGE_TRUNCATED;}
 	YY_BREAK
 case 107:
 YY_RULE_SETUP
-#line 232 "mediator_config_lex.l"
+#line 269 "mediator_config_lex.l"
 {return TOK_METADATA_EXPORT;}
 	YY_BREAK
 case 108:
 YY_RULE_SETUP
-#line 233 "mediator_config_lex.l"
+#line 270 "mediator_config_lex.l"
 {return TOK_MOVE;}
 	YY_BREAK
 case 109:
 YY_RULE_SETUP
-#line 234 "mediator_config_lex.l"
+#line 271 "mediator_config_lex.l"
 {return TOK_MOVE;}
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 235 "mediator_config_lex.l"
+#line 272 "mediator_config_lex.l"
 {return TOK_MULTI_FILES;}
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 236 "mediator_config_lex.l"
+#line 273 "mediator_config_lex.l"
 {return TOK_MULTI_FILES;}
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 237 "mediator_config_lex.l"
+#line 274 "mediator_config_lex.l"
 {return TOK_MY_DB;}
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
-#line 238 "mediator_config_lex.l"
+#line 275 "mediator_config_lex.l"
 {return TOK_MY_DB;}
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 239 "mediator_config_lex.l"
+#line 276 "mediator_config_lex.l"
 {return TOK_MY_HOST;}
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 240 "mediator_config_lex.l"
+#line 277 "mediator_config_lex.l"
 {return TOK_MY_PW;}
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 241 "mediator_config_lex.l"
+#line 278 "mediator_config_lex.l"
 {return TOK_MY_PW;}
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 242 "mediator_config_lex.l"
+#line 279 "mediator_config_lex.l"
 {return TOK_MY_REMOVE;}
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 243 "mediator_config_lex.l"
+#line 280 "mediator_config_lex.l"
 {return TOK_MY_TABLE;}
 	YY_BREAK
 case 119:
 YY_RULE_SETUP
-#line 244 "mediator_config_lex.l"
+#line 281 "mediator_config_lex.l"
 {return TOK_MY_USER;}
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 245 "mediator_config_lex.l"
+#line 282 "mediator_config_lex.l"
 {return TOK_NO_FLOW;}
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 246 "mediator_config_lex.l"
+#line 283 "mediator_config_lex.l"
 {return TOK_NO_FLOW_STATS;}
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 247 "mediator_config_lex.l"
+#line 284 "mediator_config_lex.l"
 {return TOK_NO_INDEX;}
 	YY_BREAK
 case 123:
 YY_RULE_SETUP
-#line 248 "mediator_config_lex.l"
+#line 285 "mediator_config_lex.l"
 {return TOK_NO_STATS;}
 	YY_BREAK
 case 124:
 YY_RULE_SETUP
-#line 249 "mediator_config_lex.l"
+#line 286 "mediator_config_lex.l"
 {return TOK_OBID_MAP;}
 	YY_BREAK
 case 125:
 YY_RULE_SETUP
-#line 250 "mediator_config_lex.l"
+#line 287 "mediator_config_lex.l"
 {return TOK_OTHER;}
 	YY_BREAK
 case 126:
 YY_RULE_SETUP
-#line 251 "mediator_config_lex.l"
+#line 288 "mediator_config_lex.l"
 {return TOK_PATH;}
 	YY_BREAK
 case 127:
 YY_RULE_SETUP
-#line 252 "mediator_config_lex.l"
+#line 289 "mediator_config_lex.l"
 {return TOK_PATH;}
 	YY_BREAK
 case 128:
 YY_RULE_SETUP
-#line 253 "mediator_config_lex.l"
+#line 290 "mediator_config_lex.l"
 {return TOK_PID_FILE;}
 	YY_BREAK
 case 129:
 YY_RULE_SETUP
-#line 254 "mediator_config_lex.l"
+#line 291 "mediator_config_lex.l"
 {return TOK_PID_FILE;}
 	YY_BREAK
 case 130:
 YY_RULE_SETUP
-#line 255 "mediator_config_lex.l"
+#line 292 "mediator_config_lex.l"
 {return TOK_POLL;}
 	YY_BREAK
 case 131:
 YY_RULE_SETUP
-#line 256 "mediator_config_lex.l"
+#line 293 "mediator_config_lex.l"
 {return TOK_PORT;}
 	YY_BREAK
 case 132:
 YY_RULE_SETUP
-#line 257 "mediator_config_lex.l"
+#line 294 "mediator_config_lex.l"
 {return TOK_PRESERVE_OBDOMAIN;}
 	YY_BREAK
 case 133:
 YY_RULE_SETUP
-#line 258 "mediator_config_lex.l"
+#line 295 "mediator_config_lex.l"
 {return TOK_PRINT_HEADER;}
 	YY_BREAK
 case 134:
 YY_RULE_SETUP
-#line 259 "mediator_config_lex.l"
+#line 296 "mediator_config_lex.l"
 {return TOK_RECORDS;}
 	YY_BREAK
 case 135:
 YY_RULE_SETUP
-#line 260 "mediator_config_lex.l"
+#line 297 "mediator_config_lex.l"
 {return TOK_REMOVE_EMPTY_FILES;}
 	YY_BREAK
 case 136:
 YY_RULE_SETUP
-#line 261 "mediator_config_lex.l"
+#line 298 "mediator_config_lex.l"
 {return TOK_REWRITE_SSL_CERTS;}
 	YY_BREAK
 case 137:
 YY_RULE_SETUP
-#line 262 "mediator_config_lex.l"
+#line 299 "mediator_config_lex.l"
 {return TOK_ROTATE_INTERVAL;}
 	YY_BREAK
 case 138:
 YY_RULE_SETUP
-#line 263 "mediator_config_lex.l"
+#line 300 "mediator_config_lex.l"
 {return TOK_SSL_CONFIG;}
 	YY_BREAK
 case 139:
 YY_RULE_SETUP
-#line 264 "mediator_config_lex.l"
+#line 301 "mediator_config_lex.l"
 {return TOK_SSL_DEDUP;}
 	YY_BREAK
 case 140:
 YY_RULE_SETUP
-#line 265 "mediator_config_lex.l"
+#line 302 "mediator_config_lex.l"
 {return TOK_SSL_DEDUP;}
 	YY_BREAK
 case 141:
 YY_RULE_SETUP
-#line 266 "mediator_config_lex.l"
+#line 303 "mediator_config_lex.l"
 {return TOK_SSL_DEDUP_ONLY;}
 	YY_BREAK
 case 142:
 YY_RULE_SETUP
-#line 267 "mediator_config_lex.l"
+#line 304 "mediator_config_lex.l"
 {return TOK_STATS_ONLY;}
 	YY_BREAK
 case 143:
 YY_RULE_SETUP
-#line 268 "mediator_config_lex.l"
+#line 305 "mediator_config_lex.l"
 {return TOK_STATS_TIMEOUT;}
 	YY_BREAK
 case 144:
 YY_RULE_SETUP
-#line 269 "mediator_config_lex.l"
+#line 306 "mediator_config_lex.l"
 {return TOK_SUBJECT;}
 	YY_BREAK
 case 145:
 YY_RULE_SETUP
-#line 270 "mediator_config_lex.l"
+#line 307 "mediator_config_lex.l"
 {return TOK_TABLE;}
 	YY_BREAK
 case 146:
 YY_RULE_SETUP
-#line 271 "mediator_config_lex.l"
+#line 308 "mediator_config_lex.l"
 {return TOK_TIMESTAMP_FILES;}
 	YY_BREAK
 case 147:
 YY_RULE_SETUP
-#line 272 "mediator_config_lex.l"
+#line 309 "mediator_config_lex.l"
 {return TOK_TOMBSTONE_CONFIG;}
 	YY_BREAK
 case 148:
 YY_RULE_SETUP
-#line 273 "mediator_config_lex.l"
+#line 310 "mediator_config_lex.l"
 {return TOK_TOMBSTONE_CONFIGURED_ID;}
 	YY_BREAK
 case 149:
 YY_RULE_SETUP
-#line 274 "mediator_config_lex.l"
+#line 311 "mediator_config_lex.l"
 {return TOK_UDP_TEMPLATE_TIMEOUT;}
 	YY_BREAK
 case 150:
 YY_RULE_SETUP
-#line 275 "mediator_config_lex.l"
+#line 312 "mediator_config_lex.l"
 {return TOK_USERIE;}
 	YY_BREAK
 case 151:
 YY_RULE_SETUP
-#line 276 "mediator_config_lex.l"
+#line 313 "mediator_config_lex.l"
 {return TOK_VLAN_MAP;}
 	YY_BREAK
 /* Error when old SM1 tokens are seen to give a better error */
 case 152:
 YY_RULE_SETUP
-#line 279 "mediator_config_lex.l"
+#line 316 "mediator_config_lex.l"
 {
     ++lineNumber;
     mediator_config_error("FILEHANDLER is not supported in super_mediator-2");
@@ -2477,52 +2476,52 @@ YY_RULE_SETUP
 	YY_BREAK
 case 153:
 YY_RULE_SETUP
-#line 284 "mediator_config_lex.l"
+#line 321 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_IP;}
 	YY_BREAK
 case 154:
 YY_RULE_SETUP
-#line 286 "mediator_config_lex.l"
+#line 323 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_DOUBLE;}
 	YY_BREAK
 case 155:
 YY_RULE_SETUP
-#line 287 "mediator_config_lex.l"
+#line 324 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_DOUBLE;}
 	YY_BREAK
 case 156:
 YY_RULE_SETUP
-#line 288 "mediator_config_lex.l"
+#line 325 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_DOUBLE;}
 	YY_BREAK
 case 157:
 YY_RULE_SETUP
-#line 289 "mediator_config_lex.l"
+#line 326 "mediator_config_lex.l"
 {yylval.str = strdup(yytext);return VAL_DOUBLE;}
 	YY_BREAK
 case 158:
 YY_RULE_SETUP
-#line 290 "mediator_config_lex.l"
+#line 327 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_DOUBLE;}
 	YY_BREAK
 case 159:
 YY_RULE_SETUP
-#line 291 "mediator_config_lex.l"
+#line 328 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_DOUBLE;}
 	YY_BREAK
 case 160:
 YY_RULE_SETUP
-#line 293 "mediator_config_lex.l"
+#line 330 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_INTEGER;}
 	YY_BREAK
 case 161:
 YY_RULE_SETUP
-#line 294 "mediator_config_lex.l"
+#line 331 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_HEXADECIMAL;}
 	YY_BREAK
 case 162:
 YY_RULE_SETUP
-#line 296 "mediator_config_lex.l"
+#line 333 "mediator_config_lex.l"
 {yylval.str = strdup(yytext); return VAL_ATOM;}
 	YY_BREAK
 /* FIXME: Change string parsing to support hexadecimal or unicode escapes
@@ -2530,48 +2529,48 @@ YY_RULE_SETUP
      * to MAC addresses and other octetArrays. */
 case 163:
 YY_RULE_SETUP
-#line 302 "mediator_config_lex.l"
+#line 339 "mediator_config_lex.l"
 {BEGIN(ST_STRING); pipeconf_buf_ptr = pipeconf_buf;}
 	YY_BREAK
 case 164:
 YY_RULE_SETUP
-#line 304 "mediator_config_lex.l"
+#line 341 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\n'; STRING_CHECK;}
 	YY_BREAK
 case 165:
 YY_RULE_SETUP
-#line 305 "mediator_config_lex.l"
+#line 342 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\t'; STRING_CHECK;}
 	YY_BREAK
 case 166:
 YY_RULE_SETUP
-#line 306 "mediator_config_lex.l"
+#line 343 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\r'; STRING_CHECK;}
 	YY_BREAK
 case 167:
 YY_RULE_SETUP
-#line 307 "mediator_config_lex.l"
+#line 344 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\b'; STRING_CHECK;}
 	YY_BREAK
 case 168:
 YY_RULE_SETUP
-#line 308 "mediator_config_lex.l"
+#line 345 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\f'; STRING_CHECK;}
 	YY_BREAK
 case 169:
 /* rule 169 can match eol */
 YY_RULE_SETUP
-#line 309 "mediator_config_lex.l"
+#line 346 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = '\n'; STRING_CHECK;}
 	YY_BREAK
 case 170:
 YY_RULE_SETUP
-#line 310 "mediator_config_lex.l"
+#line 347 "mediator_config_lex.l"
 {*pipeconf_buf_ptr++ = yytext[1]; STRING_CHECK;}
 	YY_BREAK
 case 171:
 YY_RULE_SETUP
-#line 312 "mediator_config_lex.l"
+#line 349 "mediator_config_lex.l"
 {if ((pipeconf_buf_ptr + yyleng) < pipeconf_buf_end ) {
                             memcpy(pipeconf_buf_ptr, yytext, yyleng);
                             pipeconf_buf_ptr += yyleng;
@@ -2586,7 +2585,7 @@ YY_RULE_SETUP
 case 172:
 /* rule 172 can match eol */
 YY_RULE_SETUP
-#line 323 "mediator_config_lex.l"
+#line 360 "mediator_config_lex.l"
 {BEGIN(INITIAL);
                         yyless(0);
                         mediator_config_warn("String missing closing \"");
@@ -2596,7 +2595,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 173:
 YY_RULE_SETUP
-#line 330 "mediator_config_lex.l"
+#line 367 "mediator_config_lex.l"
 {BEGIN(INITIAL);
                         *pipeconf_buf_ptr = '\0';
                         yylval.str = strdup(pipeconf_buf);
@@ -2607,17 +2606,17 @@ YY_RULE_SETUP
      * line. */
 case 174:
 YY_RULE_SETUP
-#line 339 "mediator_config_lex.l"
+#line 376 "mediator_config_lex.l"
 ;
 	YY_BREAK
 case 175:
 YY_RULE_SETUP
-#line 340 "mediator_config_lex.l"
+#line 377 "mediator_config_lex.l"
 ;
 	YY_BREAK
 case 176:
 YY_RULE_SETUP
-#line 341 "mediator_config_lex.l"
+#line 378 "mediator_config_lex.l"
 {BEGIN(INITIAL);
                         yylval.str = strdup(pipeconf_buf);
                         return VAL_QSTRING; }
@@ -2625,7 +2624,7 @@ YY_RULE_SETUP
 case 177:
 /* rule 177 can match eol */
 YY_RULE_SETUP
-#line 344 "mediator_config_lex.l"
+#line 381 "mediator_config_lex.l"
 {BEGIN(INITIAL);
                         yyless(0);
                         mediator_config_warn("String missing closing \"");
@@ -2635,22 +2634,22 @@ YY_RULE_SETUP
 /* Handle unknown keyword */
 case 178:
 YY_RULE_SETUP
-#line 352 "mediator_config_lex.l"
+#line 389 "mediator_config_lex.l"
 {yyless(0); BEGIN(ST_TOKEN_ERR);}
 	YY_BREAK
 case 179:
 YY_RULE_SETUP
-#line 354 "mediator_config_lex.l"
+#line 391 "mediator_config_lex.l"
 {mediator_config_warn("Unrecognized token '%s'",
                                                   yytext);
                              BEGIN(INITIAL); }
 	YY_BREAK
 case 180:
 YY_RULE_SETUP
-#line 358 "mediator_config_lex.l"
+#line 395 "mediator_config_lex.l"
 ECHO;
 	YY_BREAK
-#line 2616 "mediator_config_lex.c"
+#line 2653 "mediator_config_lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(ST_STRING):
 case YY_STATE_EOF(ST_STRING_ERR):
@@ -2841,7 +2840,7 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			yy_size_t num_to_read =
+			int num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
@@ -2855,7 +2854,7 @@ static int yy_get_next_buffer (void)
 
 			if ( b->yy_is_our_buffer )
 				{
-				yy_size_t new_size = b->yy_buf_size * 2;
+				int new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -2913,7 +2912,7 @@ static int yy_get_next_buffer (void)
 
 	if (((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
 		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc(
 			(void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf, (yy_size_t) new_size  );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
@@ -3016,7 +3015,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
+			int offset = (int) ((yy_c_buf_p) - (yytext_ptr));
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -3385,12 +3384,12 @@ YY_BUFFER_STATE yy_scan_string (const char * yystr )
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, yy_size_t  _yybytes_len )
+YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	yy_size_t i;
+	int i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = (yy_size_t) (_yybytes_len + 2);
@@ -3432,7 +3431,7 @@ static void yynoreturn yy_fatal_error (const char* msg )
 	do \
 		{ \
 		/* Undo effects of setting up yytext. */ \
-        yy_size_t yyless_macro_arg = (n); \
+        int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		yytext[yyleng] = (yy_hold_char); \
 		(yy_c_buf_p) = yytext + yyless_macro_arg; \
@@ -3472,7 +3471,7 @@ FILE *yyget_out  (void)
 /** Get the length of the current token.
  * 
  */
-yy_size_t yyget_leng  (void)
+int yyget_leng  (void)
 {
         return yyleng;
 }
@@ -3622,7 +3621,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 358 "mediator_config_lex.l"
+#line 395 "mediator_config_lex.l"
 
 
 /*  Reenable uncrustify */

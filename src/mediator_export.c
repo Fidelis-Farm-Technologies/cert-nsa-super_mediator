@@ -735,6 +735,18 @@ mdNewExporter(
             exporter->escape_chars = TRUE;
             exporter->delimiter = ',';
         }
+
+        //
+        // nDPI
+        exporter->ndpiStruct = ndpi_init_detection_module(NULL);
+        if (exporter->ndpiStruct == NULL) {
+            g_warning("ndpi_init_detection_module() failed");
+            return NULL;
+        }
+        NDPI_PROTOCOL_BITMASK protos;
+        NDPI_BITMASK_SET_ALL(protos);
+        ndpi_set_protocol_detection_bitmask2(exporter->ndpiStruct, &protos);
+        ndpi_finalize_initialization(exporter->ndpiStruct);
     }
 
     exporter->dpi_field_table = NULL;

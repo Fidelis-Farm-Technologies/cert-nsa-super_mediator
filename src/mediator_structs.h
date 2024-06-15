@@ -78,6 +78,8 @@
 #include "mediator_config.h"
 #include "templates.h"
 
+#include <ndpi/ndpi_api.h>
+
 #ifdef HAVE_MYSQL
 #include <mysql.h>
 #endif
@@ -1082,6 +1084,9 @@ struct mdExporter_st {
 
     gboolean                    invariant;
     mdExporterInvariantState_t  invState;
+    //
+    // nDPI struct for printing ndpiL7Protocol & ndpiL7SubProtocol
+    struct ndpi_detection_module_struct * ndpiStruct;
 };
 
 /* END OF EXPORTER STRUCTS */
